@@ -620,7 +620,7 @@ export default class Maps extends Component{
     }
     render(){
         return(
-            <div id="maps" className={style['map-box-style']} ref={"maps"}>666</div>
+            <div id="maps" className={style['map-box-style']} ref={"maps"}></div>
         )
     }
 }

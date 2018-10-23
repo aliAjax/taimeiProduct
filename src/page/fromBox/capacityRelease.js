@@ -16,6 +16,7 @@ import { Radio, Select, Input, Checkbox, Button, DatePicker, TimePicker, Modal, 
 import style from '../../static/css/fromBox/capacityRelease.scss';
 import emitter from "../../utils/events";
 import TimeComponent from "../../components/timeComponent/timeComponent";
+import CapacityPoint from "../../components/capacityPoint/capacityPoint";
 import Btn from "../../components/button/btn";
 import HourTimer from "../../components/timeComponent/hourTimer";
 import 'moment/locale/zh-cn';//antd时间组件中文包
@@ -54,6 +55,11 @@ export default class CapacityRelease extends Component {
         this.iHomeChange = this.iHomeChange.bind(this);
         this.outTimeEvent = this.outTimeEvent.bind(this);
         this.inTimeEvent = this.inTimeEvent.bind(this);
+        this.setStop = this.setStop.bind(this);
+        this.transitEvent = this.transitEvent.bind(this);
+        this.jiltFlyEvent = this.jiltFlyEvent.bind(this);
+        this.jiltFlyData = this.jiltFlyData.bind(this);
+        this.transitData = this.transitData.bind(this);
         this.state = {
             url: "",//发布表单地址
             demand: "",//发布表单的数据
@@ -65,6 +71,7 @@ export default class CapacityRelease extends Component {
             aircrfttyp: "",//拟飞机型
             seating: "",//座位数布局
             dpt: "",//运力始发
+            pst:"",//经停点
             arrv: "",//目标区域或航点
             dptTime: "",//出港时间
             arrvTime: "",//进航时间
@@ -110,6 +117,7 @@ export default class CapacityRelease extends Component {
             hintText: {//验证提示语
                 aircrfttyp: "",
                 dpt: "",
+                pst:"",
                 arrv: "",
                 seating: "",
                 dptTime: "",
@@ -161,6 +169,10 @@ export default class CapacityRelease extends Component {
             noMsg:false,//无数据保存表单
             fixed:false,//固定定位显示判断 false 为不显示
             payShow:false,//密码弹层显示
+            stopType:"noStop",//直飞或经停 noStop 直飞 transit 经停
+            pstAreaType:"1",//经停航点类型 1-机场三字码 2-省份 3-区域
+            pstMandatoryDesignation:"0",//经停是否强制指定 0：否 1：是
+            mandatoryDesignation:"0",//目标航点或甩飞航点是否强制指定 0：否 1：是
         }
     }
 
@@ -365,12 +377,28 @@ export default class CapacityRelease extends Component {
     //data:返回数据对象
     dptAirportData(data) {
         let dpt = data.code;
-        let arrv = this.state.arrv;
+        let {arrv,pst} = this.state;
         let hintText = this.state.hintText;
+        // let dptSearchText=data.name;
         hintText.dpt = "";
-        if (dpt == arrv) {
-            hintText.dpt = "* 运力始发和目标航点不能相同";
-            dpt = ""
+        if(dpt){
+			if (dpt == arrv&&dpt==pst) {
+				hintText.dpt = "* 运力始发、经停航点和甩飞航点不能相同";
+				hintText.pst="";
+				hintText.arrv="";
+			}else if(dpt==pst&&dpt!=arrv){
+			    hintText.dpt="* 运力始发和经停航点不能相同";
+				hintText.pst="";
+				hintText.arrv="";
+            }else if(dpt==arrv&&dpt!=pst){
+				hintText.dpt="* 运力始发和甩飞航点不能相同";
+				hintText.pst="";
+				hintText.arrv="";
+            }else if(dpt!=arrv&&arrv==pst&&arrv){
+				hintText.dpt="";
+				hintText.pst="* 经停航点和甩飞航点不能相同";
+				hintText.arrv="";
+            }
         };
         this.setState({
             hintText,
@@ -387,7 +415,7 @@ export default class CapacityRelease extends Component {
         let hintText = this.state.hintText;
         hintText.arrv = "";
         if (dpt == arrv) {
-            hintText.dpt = "* 运力始发和目标航点不能相同";
+            hintText.dpt = "* 运力始发和目标航点或甩飞航点不能相同";
             arrv = ""
         } else {
             hintText.dpt = "";
@@ -550,8 +578,12 @@ export default class CapacityRelease extends Component {
     saveDraft() {
         //保存草稿前数据组装
         let _this=this;
-        const { demandtype, data, offerMode, bottomSubsidyPrice, arrvTime, areaType, seating, contact, remark, dptTime, iHome, performShift, sailingtime, fixedSubsidyPrice, aircrfttyp, arrv, dpt, periodValidity,otherType,fixedSubsidyPriceType,bottomSubsidyPriceType } = this.state;
+        const { demandtype, data, offerMode, bottomSubsidyPrice, arrvTime, areaType,pstAreaType, seating,stopType, contact, remark, dptTime, iHome, performShift, sailingtime, fixedSubsidyPrice, aircrfttyp, arrv, pst,dpt, periodValidity,otherType,fixedSubsidyPriceType,bottomSubsidyPriceType,mandatoryDesignation,pstMandatoryDesignation } = this.state;
         let days = "";
+        let routeType=1;
+        if(this.state.stopType=="noStop"){
+            routeType=0;
+        }
         for (var i = 0; i < 7; i++) {
             if (data[i].type) {
                 days = days + "/" + data[i].name
@@ -571,6 +603,11 @@ export default class CapacityRelease extends Component {
         plan["fixedSubsidyPrice"] = fixedSubsidyPrice;
         plan["bottomSubsidyPrice"] = bottomSubsidyPrice;
         plan["areaType"] = areaType;
+        plan["pst"] = pst;
+        plan["routeType"] = routeType;
+        plan["pstAreaType"] = pstAreaType;
+        plan["mandatoryDesignation"] = mandatoryDesignation;
+        plan["pstMandatoryDesignation"] = pstMandatoryDesignation;
         plans.push(plan);
         var demand = {};
         demand.periodValidity = periodValidity;
@@ -598,7 +635,7 @@ export default class CapacityRelease extends Component {
             }
         let state = this.state;
             //判断是否填写表单，如未填写则给出相应提示
-        if (state.aircrfttyp == "" && state.seating == "" && state.dptTime == "" && (state.days == daysString || state.days == "") && state.sailingtime == "整年" && state.contact == concatDefault && state.iHome == iHomeDefault && state.periodValidity == "" && state.remark == "" && !state.performShift && state.fixedSubsidyPrice == "" && state.bottomSubsidyPrice == "" && state.dpt == "" && state.arrv == ""&&!bottomSubsidyPriceType&&!fixedSubsidyPriceType&&!otherType) {
+        if (state.pst==""&&state.aircrfttyp == "" && state.seating == "" && state.dptTime == "" && (state.days == daysString || state.days == "") && state.sailingtime == "整年" && state.contact == concatDefault && state.iHome == iHomeDefault && state.periodValidity == "" && state.remark == "" && !state.performShift && state.fixedSubsidyPrice == "" && state.bottomSubsidyPrice == "" && state.dpt == "" && state.arrv == ""&&!bottomSubsidyPriceType&&!fixedSubsidyPriceType&&!otherType) {
             Modal.error({
                 title: '信息提示：',
                 content: '请填写表单后再保存草稿',
@@ -609,7 +646,57 @@ export default class CapacityRelease extends Component {
                 },
                 className: "test"
             });
-        } else {
+        }else if(stopType=="transit"){
+            if(!pst||!arrv){
+                Modal.error({
+                    title: '信息提示：',
+                    content: '经停需填写经停点和甩飞点方可保存草稿',
+                    onOk() {
+                        _this.setState({
+                            noMsg:false
+                        })
+                    },
+                    className: "test"
+                });
+            }else {
+                Axios({
+                    method: 'post',
+                    url,
+                    data: JSON.stringify(demand),
+                    dataType: 'json',
+                    headers: {
+                        'Content-type': 'application/json; charset=utf-8'
+                    }
+                }).then((response) => {
+                    if (response.data.opResult == "0") {
+                        Modal.success({
+                            title: '信息提示：',
+                            content: '保存草稿成功，请进入个人中心-草稿箱查看',
+                            onOk() {
+                                emitter.emit('openFrom', { openFrom: false });
+                            },
+                            className: "test"
+                        });
+                        emitter.emit('renewCaogaoxiang');
+                    } else {
+                        let erMsg="";
+                        if(response.data.msg){
+                            erMsg=response.data.msg
+                        }else {
+                            erMsg="请重新操作"
+                        };
+                        Modal.error({
+                            title: '信息提示：',
+                            content: '保存草稿失败' + "," + erMsg,
+                            onOk() {
+                                emitter.emit('openFrom', { openFrom: false });
+                            },
+                            className: "test"
+                        });
+                    }
+                })
+            }
+        }else {
             Axios({
                 method: 'post',
                 url,
@@ -630,9 +717,15 @@ export default class CapacityRelease extends Component {
                     });
                     emitter.emit('renewCaogaoxiang');
                 } else {
+					let erMsg="";
+					if(response.data.msg){
+						erMsg=response.data.msg
+					}else {
+						erMsg="请重新操作"
+					};
                     Modal.error({
                         title: '信息提示：',
-                        content: '保存草稿失败' + "," + response.data.msg,
+                        content: '保存草稿失败' + "," + erMsg,
                         onOk() {
                             emitter.emit('openFrom', { openFrom: false });
                         },
@@ -648,7 +741,8 @@ export default class CapacityRelease extends Component {
         let hintText = this.state.hintText;
         let comparisonTime = false;//运力有效期跟当前时间比较
         let comparisonSailingTime = true;//计划时间跟当前时间比较
-        const { demandtype, data, offerMode, areaType, bottomSubsidyPrice, arrvTime, seating, contact, remark, dptTime, iHome, performShift, sailingtime, fixedSubsidyPrice, aircrfttyp, arrv, dpt, periodValidity } = this.state;
+        let { demandtype, data, offerMode, areaType,doubleAffirm,stopType,pstAreaType, bottomSubsidyPrice, arrvTime, seating, contact, remark, dptTime, iHome, performShift, sailingtime, fixedSubsidyPrice, aircrfttyp, arrv,pst, dpt, periodValidity,mandatoryDesignation,pstMandatoryDesignation,payShow } = this.state;
+        //航点信息提示
         //座位数布局提示
         let seatingReg = /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{4,8}$/;
         if (!seating) {
@@ -673,11 +767,23 @@ export default class CapacityRelease extends Component {
         };
         //目标区域
         if (!arrv) {
-            hintText.arrv = "* 请选择目标区域或航点";
+            if(stopType=="noStop") {
+				hintText.arrv = "* 请选择目标区域或航点";
+			}else {
+				hintText.arrv = "* 请选择甩飞区域或航点";
+            }
             this.setState({
                 hintText
             })
         };
+
+        //经停数据判断
+        if(stopType=="transit"&&!pst){
+            hintText.pst = "* 请选择经停区域或航点";
+            this.setState({
+                hintText
+            })
+        }
 
         //出港时刻
         if (!dptTime) {
@@ -798,10 +904,12 @@ export default class CapacityRelease extends Component {
         }else {
             var phoneReg = /^[1][3,4,5,7,8][0-9]{9}$/;//验证规则
             if(!phoneReg.test(iHome)){
-                let {judgeStylesType}=this.state;
+                let {judgeStylesType,hintText}=this.state;
                 judgeStylesType.iHome = false;
+                hintText.iHome="* 请输入正确的电话号码"
                 this.setState({
-                    judgeStylesType
+                    judgeStylesType,
+                    hintText
                 })
             };
         };
@@ -835,27 +943,72 @@ export default class CapacityRelease extends Component {
 
         //判断运力始发和目标航点是否相同
         let siteType = false;
-        if (arrv && dpt) {
-            let hintText = this.state.hintText;
-            if (arrv == dpt) {
-                hintText.dpt = "* 运力始发和目标航点不能相同";
-                hintText.arrv = ""
-                this.setState({
-                    hintText
-                })
-            } else {
-                hintText.dpt = "";
-                this.setState({
-                    hintText
-                })
-                siteType = true
+        if(this.state.stopType=="noStop"){//noStop 直飞 transit 经停
+            if (arrv && dpt) {
+                let hintText = this.state.hintText;
+                if (arrv == dpt) {
+                    hintText.dpt = "* 运力始发和目标航点不能相同";
+                    hintText.arrv = "";
+                    this.setState({
+                        hintText
+                    })
+                } else {
+                    hintText.dpt = "";
+                    hintText.arrv = "";
+                    this.setState({
+                        hintText
+                    })
+                    siteType = true
+                }
+            };
+        }else {
+            if(arrv&&dpt&&pst){
+                let hintText = this.state.hintText;
+                if(arrv==dpt&&dpt!=pst){
+                    hintText.dpt = "* 运力始发和甩飞航点不能相同";
+                    hintText.arrv = "";
+                    this.setState({
+                        hintText
+                    })
+                }else if(arrv!=dpt&&dpt==pst){
+                    hintText.dpt = "* 运力始发和经停航点不能相同";
+                    hintText.arrv = "";
+                    hintText.pst = ""
+                    this.setState({
+                        hintText
+                    })
+                }else if(arrv==dpt&&dpt==pst){
+                    hintText.dpt = "* 运力始发、经停航点和甩飞航点不能相同";
+                    hintText.arrv = "";
+                    hintText.pst = ""
+                    this.setState({
+                        hintText
+                    })
+                }else if(dpt!=arrv&&dpt!=pst&&areaType==1&&pstAreaType==1&&pst==arrv){
+					hintText.dpt = "";
+					hintText.arrv = "* 经停航点和甩飞航点不能相同";
+					hintText.pst = ""
+					this.setState({
+						hintText
+					})
+                }else {
+                    hintText.dpt = "";
+                    hintText.arrv = "";
+                    hintText.pst = "";
+                    this.setState({
+                        hintText
+                    })
+                    siteType = true
+                }
             }
-        };
+        }
+
         //发布运力信息，对数据进行验证
         if (comparisonTime && comparisonSailingTime && dataType && arrvTime && priceAll && this.state.hintText.performShift == ""&& arrv && dpt && seating && seatingReg.test(seating) && contact && dptTime && /^[1][3,4,5,7,8][0-9]{9}$/.test(iHome) && performShift && aircrfttyp && siteType && timeType && priceType) {
-            this.setState({
-                doubleAffirm: true
-            });
+            let routeType=1;
+            if(this.state.stopType=="noStop"){
+                routeType=0;
+            };
             //拟开班期数据组装
             let days = "";
             for (var i = 0; i < 7; i++) {
@@ -878,6 +1031,11 @@ export default class CapacityRelease extends Component {
             plan["areaType"] = areaType;
             plan["fixedSubsidyPrice"] = fixedSubsidyPrice;
             plan["bottomSubsidyPrice"] = bottomSubsidyPrice;
+            plan["pst"] = pst;
+            plan["routeType"] = routeType;
+            plan["pstAreaType"] = pstAreaType;
+            plan["mandatoryDesignation"] = mandatoryDesignation;
+            plan["pstMandatoryDesignation"] = pstMandatoryDesignation;
             plans.push(plan);
             var demand = {};
             demand.periodValidity = periodValidity;
@@ -917,15 +1075,18 @@ export default class CapacityRelease extends Component {
             //         url = "/demandAdd";
             //     };
             // };
-            //根据是否由草稿箱打开，调用不同接口
-            if (this.state.draftData.id) {
+            //根据不同的打开方式，调用不同接口
+            if (this.state.draftData.id&&!this.state.bianjiAgain) {//草稿箱打开时
                 url = "/demandUpdate";
                 demand.id = this.state.draftData.id;
                 demand.demandprogress = "";
-            }else if(this.state.bianjiAgain){
-                url="/republishDemand";
+            }else
+            if(this.state.bianjiAgain){//运力发布超过3天重新编辑时
+                url="/demandUpdate";
                 demand.id=this.state.demandId;
-            }else {
+                let releasetime=moment().format().split("T").join(" ").split("+")[0];
+                demand.releasetime=releasetime;
+            }else {//直接点击发布表单时
                 url = "/demandAdd"
             };
             //获取始发机场简称
@@ -937,10 +1098,19 @@ export default class CapacityRelease extends Component {
                     break;
                 };
             };
+            if(demandtype==4){
+                payShow=true;
+				doubleAffirm=false;
+            }else{
+                payShow=false;
+                doubleAffirm=true
+            };
             this.setState({
                 url,
                 demand,
-                titleText
+                titleText,
+                payShow,
+                doubleAffirm
             })
         }
     };
@@ -951,7 +1121,7 @@ export default class CapacityRelease extends Component {
         if(this.state.bianjiAgain){
             emitter.emit('openFrom', { openFrom: false });
         };
-        if (state.aircrfttyp == "" && state.seating == "" && state.dptTime == "" && (state.days == daysString || state.days == "") && state.sailingtime == "整年" && state.contact == concatDefault && state.iHome == iHomeDefault && state.periodValidity == "" && state.remark == "" && !state.performShift && state.fixedSubsidyPrice == "" && state.bottomSubsidyPrice == "" && state.dpt == "" && state.arrv == ""&&!state.otherType&&!state.bottomSubsidyPriceType&&!state.fixedSubsidyPriceType) {
+        if (state.demandtype=="1"&&state.aircrfttyp == "" && state.seating == "" && state.dptTime == "" && (state.days == daysString || state.days == "") && state.sailingtime == "整年" && state.contact == concatDefault && state.iHome == iHomeDefault && state.periodValidity == "" && state.remark == "" && !state.performShift && state.fixedSubsidyPrice == "" && state.bottomSubsidyPrice == "" && state.dpt == "" && state.arrv == ""&&!state.otherType&&!state.bottomSubsidyPriceType&&!state.fixedSubsidyPriceType) {
             emitter.emit('openFrom', { openFrom: false });
         } else {
             this.setState({
@@ -1252,7 +1422,7 @@ export default class CapacityRelease extends Component {
         })
     };
 
-    // 计划执行时间
+    // 计划执行时间并计算默认执行班次
     changeEvent(data,date){//data:组件返回时间  date:组件返回时间对象
         let performShift = 0;
         let hintText = this.state.hintText;
@@ -1454,12 +1624,14 @@ export default class CapacityRelease extends Component {
 
     //打开组件跳转对应月份
     openDatePicker(){
-        let periodValidity=this.state.periodValidity;
+        let {periodValidity,hintText}=this.state;
         if(!periodValidity){
             periodValidity=moment().add(1,"months").format("L").split("/").join("-");
+            hintText.periodValidity="";
         };
         this.setState({
-            periodValidity
+            periodValidity,
+            hintText
         })
     }
 
@@ -1674,10 +1846,35 @@ export default class CapacityRelease extends Component {
         });
     }
 
+    //直飞或者经停类型选择
+    setStop(e){
+        // console.info(e.target.value);
+        let hintText=this.state.hintText;
+        // this.state.pstMandatoryDesignation
+        hintText.dpt="";
+        hintText.pst="";
+        this.setState({
+            stopType:e.target.value,
+            hintText,
+            pst:"",
+            arrv:"",
+            areaType:"1",
+            pstAreaType:"1",
+            mandatoryDesignation:0,
+            pstMandatoryDesignation:0
+        })
+    }
+
     //草稿数据绑定表单事件
     draftEvent(defaultData,num) {//num:0 草稿 num:1  重新上架 2:重新编辑 defaultData:草稿数据
-        let { aircrfttyp, seating,demandPlans:[{arrv="",dpt="",areaType="1"}], demandtype, dptTime, arrvTime, days, sailingtime, performShift, subsidypolicy, periodValidity, contact, remark, iHome, fixedSubsidyPrice, bottomSubsidyPrice } = defaultData;
+        let { aircrfttyp, seating,demandPlans:[{arrv="",dpt="",areaType="1",pst="",pstAreaType="1",mandatoryDesignation=0,pstMandatoryDesignation=0}], demandtype, dptTime, arrvTime, days, sailingtime, performShift, subsidypolicy, periodValidity, contact, remark, iHome, fixedSubsidyPrice, bottomSubsidyPrice } = defaultData;
         let judgeStylesType = this.state.judgeStylesType;
+        // let demandPlans=defaultData.demandPlans;
+        //直飞或经停判断
+        let stopType="noStop";
+        if(!!pst){
+            stopType="transit"
+        };
         let hintText = this.state.hintText;
         //报价按钮是否已点击判断及提示
         let fixedSubsidyPriceType = this.state.fixedSubsidyPriceType;
@@ -1774,7 +1971,7 @@ export default class CapacityRelease extends Component {
             judgeStylesType.seating = true;
             hintText.seating="";
         };
-        //目标区域显示文字判断
+        //始发区域显示文字判断
         let allAirList = store.getState().allAirList;//始发点
         let dptSearchText = "";
         for (let i = 0; i < allAirList.length; i++) {
@@ -1783,29 +1980,31 @@ export default class CapacityRelease extends Component {
                 break
             }
         };
-        let arrvSearchText = "";
-        let arrvAreaSearchText = "";
-        let arrvProvinceSearchText = "";
-        if (arrv) {
-            if (areaType == "1") {
-                //机场匹配查询
-                for (let i = 0; i < allAirList.length; i++) {
-                    if (allAirList[i].iata == arrv) {
-                        arrvSearchText = allAirList[i].airlnCdName;
-                        break
-                    }
-                };
-            } else if (areaType == "2") {
-                arrvProvinceSearchText = arrv
-            } else if (areaType == "3") {
-                arrvAreaSearchText = arrv
-            } else {
-                areaType = "1"
-            };
-            hintText.arrv="";
-        } else {
-            areaType = "1"
-        };
+        // //目标地点
+        // let arrvSearchText = "";
+        // let arrvAreaSearchText = "";
+        // let arrvProvinceSearchText = "";
+        // if (arrv) {
+        //     if (areaType == "1") {
+        //         //机场匹配查询
+        //         for (let i = 0; i < allAirList.length; i++) {
+        //             if (allAirList[i].iata == arrv) {
+        //                 arrvSearchText = allAirList[i].airlnCdName;
+        //                 break
+        //             }
+        //         };
+        //     } else if (areaType == "2") {
+        //         arrvProvinceSearchText = arrv
+        //     } else if (areaType == "3") {
+        //         arrvAreaSearchText = arrv
+        //     } else {
+        //         areaType = "1"
+        //     };
+        //     hintText.arrv="";
+        // } else {
+        //     areaType = "1"
+        // };
+
         let disableSailingTime = "";
         if (sailingtime) {
             let sDate = sailingtime.split(",");
@@ -1828,9 +2027,11 @@ export default class CapacityRelease extends Component {
             hintText.dptTime="";
         };
         this.setState({
+            stopType,
             aircrfttyp,
             demandtype,
             seating,
+            pst,
             dpt,
             arrv,
             areaType,
@@ -1854,11 +2055,14 @@ export default class CapacityRelease extends Component {
             bottomSubsidyPriceType,
             otherType,
             judgeStylesType,
-            arrvSearchText,
-            arrvAreaSearchText,
-            arrvProvinceSearchText,
+            // arrvSearchText,
+            // arrvAreaSearchText,
+            // arrvProvinceSearchText,
             dptSearchText,
-            hintText
+            hintText,
+            pstAreaType,
+            mandatoryDesignation,
+            pstMandatoryDesignation
         });
     }
 
@@ -1883,8 +2087,16 @@ export default class CapacityRelease extends Component {
         }else if(this.props.chongxinshangjia){
             ({demandId:reDemandId=""}=this.props.chongxinshangjia);
         }else if(this.props.bianjiAgain){
-            ({demandId:reDemandId=""}=this.props.bianjiAgain);
-            bianjiAgain=true;
+            if(this.props.bianjiAgain.bianjiAgain){
+                ({demandId:reDemandId=""}=this.props.bianjiAgain);
+                bianjiAgain=true;
+            }else {
+                if(this.props.bianjiAgain.new){
+                    this.setState({
+                        demandtype:"4"
+                    })
+                }
+            }
         };
         if(demandId){
             Axios({  //草稿箱打开表单
@@ -1971,7 +2183,7 @@ export default class CapacityRelease extends Component {
                 } else {
                 }
             });
-        }
+        };
     };
 
     componentWillReceiveProps(nextProps){
@@ -2031,23 +2243,86 @@ export default class CapacityRelease extends Component {
         },500)
     }
 
+    //经停是否锁定事件
+    transitEvent(data){
+        // console.info(data);
+        this.setState({
+            pstMandatoryDesignation:data
+        })
+    }
+    //甩飞是否锁定事件
+    jiltFlyEvent(data){
+        // console.info(data);
+        this.setState({
+            mandatoryDesignation:data
+        })
+    }
+
+    //经停数据
+    transitData(data){
+        let pst=data.pointData;
+        let hintText=this.state.hintText;
+        if(pst){
+			hintText.arrv="";
+			hintText.dpt="";
+			hintText.pst="";
+        };
+        this.setState({
+            pstAreaType:data.areaType,
+            pst,
+            hintText
+            // pstMandatoryDesignation:data.lockType
+        })
+    }
+    //甩飞数据
+    jiltFlyData(data){//  stopType:"noStop",//直飞或经停 noStop 直飞 transit 经停
+        let {stopType,dpt,pst,hintText}=this.state;
+		let arrv=data.pointData;
+        let hint="目标航点";
+        if(stopType=="transit"){
+            hint="甩飞航点"
+        };
+        if(stopType=="noStop"){//直飞的情况
+          if(arrv&&arrv!=dpt){
+              hintText.arrv="";
+              hintText.dpt="";
+              hintText.pst="";
+          }
+        }else {//经停的情况
+            if(arrv){
+				hintText.arrv="";
+				hintText.dpt="";
+				hintText.pst="";
+            }
+        };
+        this.setState({
+            areaType:data.areaType,
+            arrv,
+            hintText
+        })
+    }
+
     render() {
         let defaultData = this.state.defaultData;
         const { dptTime, arrvTime } = this.state;
         let dptAxis = {  // 始发下拉搜索样式
             position: 'absolute',
+            width:'245px',
             top: '40px',
             right: '0',
             maxHeight: '220px',
             overflowY: 'scroll',
+			boxShadow: '0 2px 11px rgba(85,85,85,0.1)',
             background: 'white',
-            zIndex: 22
+            zIndex: 222
         };
         let arrvAxis = {  // 目标航点下拉搜索样式
             position: 'absolute',
             top: '40px',
+			width:'245px',
             right: '0',
             maxHeight: '220px',
+			boxShadow: '0 2px 11px rgba(85,85,85,0.1)',
             overflowY: 'scroll',
             background: 'white',
             zIndex: 22
@@ -2056,67 +2331,13 @@ export default class CapacityRelease extends Component {
             position: 'absolute',
             top: '40px',
             right: '0',
+			width:'245px',
             maxHeight: '220px',
+			boxShadow: '0 2px 11px rgba(85,85,85,0.1)',
             overflowY: 'scroll',
             background: 'white',
             zIndex: 22
         };
-        //判断目标航点或者区域
-        let areaType = this.state.areaType;
-        let arrvBox = "";
-        if (areaType == "3") {//目标区域
-            arrvBox = <Fragment>
-                <input type="text"
-                    className={style['role-search-input']}
-                    maxLength="20"
-                    placeholder="请输入目标区域"
-                    value={this.state.arrvAreaSearchText}
-                    onChange={this.arrvAreaSearchTextChangeFn.bind(this)}
-                    // onFocus={this.arrvAreaInputFocusFn.bind(this)}
-                    onBlur={this.arrvAreaInputBlurFn.bind(this)} />
-                {
-                    this.state.arrvAreaShowAirportSearch &&
-                    <TargetArea axis={arrvAreaAxis}
-                        returnData={this.arrvAreaAirportData.bind(this)}
-                        searchText={this.state.arrvAreaSearchText}
-                    />
-                }
-            </Fragment>
-        } else if (areaType == "1") {//目标航点
-            arrvBox = <Fragment>
-                <input type="text"
-                    className={style['role-search-input']}
-                    maxLength="20"
-                    placeholder="请输入目标航点"
-                    value={this.state.arrvSearchText}
-                    onChange={this.arrvSearchTextChangeFn.bind(this)}
-                    // onFocus={this.arrvInputFocusFn.bind(this)}
-                    onBlur={this.arrvInputBlurFn.bind(this)} />
-                {
-                    this.state.arrvShowAirportSearch
-                    && <AirportSearch axis={arrvAxis}
-                        resData={this.arrvAirportData.bind(this)}
-                        searchText={this.state.arrvSearchText} />
-                }
-            </Fragment>
-        } else if (areaType == "2") {//目标省份
-            arrvBox = <Fragment>
-                <input type="text"
-                    className={style['role-search-input']}
-                    maxLength="20"
-                    placeholder="请输入目标省份"
-                    value={this.state.arrvProvinceSearchText}
-                    onChange={this.arrvProvinceSearchTextChangeFn.bind(this)}
-                    // onFocus={this.arrvProvinceInputFocusFn.bind(this)}
-                    onBlur={this.arrvProvinceInputBlurFn.bind(this)} />
-                {
-                    this.state.arrvProvinceShowAirportSearch
-                    && <ProvinceSearch axis={arrvAxis}
-                        returnData={this.arrvProvinceAirportData.bind(this)}
-                        searchText={this.state.arrvProvinceSearchText} />
-                }
-            </Fragment>
-        }
         //移动电话正则验证提示
         let iHomeText = "";
         let iHomeType = this.state.judgeStylesType.iHome;
@@ -2215,13 +2436,6 @@ export default class CapacityRelease extends Component {
         if (arrvTime != "") {
             inTimeDefault = moment(arrvTime, format);
         };
-        //判断发布需求类型
-        let demandTypeRadio = "";
-        if (this.state.demandtype == 1) {
-            demandTypeRadio = "demand"
-        } else if (this.state.demandtype == 4) {
-            demandTypeRadio = "entrust"
-        };
         //运力有效期
         let periodValidityTime = this.state.periodValidity;
         let periodValidityTimeText = null;
@@ -2254,10 +2468,18 @@ export default class CapacityRelease extends Component {
                 {/*</div>*/}
                 <div className={style['capacity-release-content']}>
                     {/*表单主要信息模块*/}
-                    <div style={{ position: "relative",height:884 }}>
-                        <div className={style['capacity-release-content-name']}>我有一个运力需要快速飞起来！</div>
+                    <div style={{ position: "relative",height:"-webkit-fill-available"}}>
+                        <div className={style['contentTop']}>
+                            <div className={style['capacity-release-content-name']}>我有一个运力需要快速飞起来！</div>
+                            <div className={style['stopStyle']}>
+                                <RadioGroup onChange={this.setStop} value={this.state.stopType}>
+                                    <Radio value={'noStop'}>直飞</Radio>
+                                    <Radio value={'transit'}>经停</Radio>
+                                </RadioGroup>
+                            </div>
+                        </div>
                         {/*<Button className={`iconfont ${style['close-btn']}`} onClick={this.cancel.bind(this)}>&#xe62c;</Button>*/}
-                        <div className={style['capacity-release-content-flex']} style={{ marginBottom: 20 }}>
+                        <div className={`${style['capacity-release-content-flex']} ${style['testMargin']}`}>
                             <div className={style['capacity-release-content-box']} style={{ position: "relative" }}>
                                 <div className={style['capacity-release-content-filter-type']}>
                                     拟飞机型
@@ -2288,48 +2510,67 @@ export default class CapacityRelease extends Component {
                                     onBlur={this.dptInputBlurFn.bind(this)}
                                 />
                                 {
-                                    this.state.dptShowAirportSearch
-                                    && <AirportSearch axis={dptAxis}
+                                    this.state.dptShowAirportSearch &&
+                                    <AirportSearch axis={dptAxis}
                                         resData={this.dptAirportData.bind(this)}
                                         searchText={this.state.dptSearchText} />
                                 }
                                 <span style={{ whiteSpace: "nowrap", position: "absolute", color: "red", top: 43 }}>{dptText}</span>
                             </div>
-                            <div className={style['capacity-release-content-box']}>
-                                <div className={style['newIcon']}>
-                                    <Select className={style['capacity-release-content-new']} value={this.state.areaType} defaultValue="1"  onChange={this.areaType}>
-                                        <Option value="1" style={{ color: "#3979ff" }}>目标航点</Option>
-                                        <Option value="2" style={{ color: "#3979ff" }}>目标省份</Option>
-                                        <Option value="3" style={{ color: "#3979ff" }}>目标区域</Option>
-                                    </Select>
-                                    <IconInfo placement={"top"} title={"请选择您的目标航点或者省份区域"}/>
-                                </div>
-                                {arrvBox}
-                                <span style={{ whiteSpace: "nowrap", position: "absolute", color: "red", top: 43 }}>{arrvText}</span>
-                            </div>
+                            {/*日期：8-13，需求变更*/}
+                            {/*<div className={style['capacity-release-content-box']}>*/}
+                                {/*<div className={style['newIcon']}>*/}
+                                    {/*<Select className={style['capacity-release-content-new']} value={this.state.areaType} defaultValue="1"  onChange={this.areaType}>*/}
+                                        {/*<Option value="1" style={{ color: "#3979ff" }}>目标航点</Option>*/}
+                                        {/*<Option value="2" style={{ color: "#3979ff" }}>目标省份</Option>*/}
+                                        {/*<Option value="3" style={{ color: "#3979ff" }}>目标区域</Option>*/}
+                                    {/*</Select>*/}
+                                    {/*<IconInfo placement={"top"} title={"请选择您的目标航点或者省份区域"}/>*/}
+                                {/*</div>*/}
+                                {/*{arrvBox}*/}
+                                {/*<span style={{ whiteSpace: "nowrap", position: "absolute", color: "red", top: 43 }}>{arrvText}</span>*/}
+                            {/*</div>*/}
                         </div>
-                        <div style={{ marginTop: 25, display: "flex" }}>
-                            <div style={{ width: 10, height: 80, border: "1px solid #3e76fb", borderRight: "0px", marginTop: 8 }}></div>
-                            <div>
-                                <div className={style['capacity-release-content-box']} style={{ width: 224, position: "relative" }}>
-                                    <div className={style['capacity-release-content-filter-type']}><span className={style['capacity-release-content-span']}>出</span>出港时段</div>
-                                    {/*<TimePicker format={format} value={outTimeDefault} popupClassName={style['test']} placeholder={""} onChange={this.dptTime.bind(this)}/>*/}
-                                    {/*time:禁选条件，“”未没有，如有：格式2018-06-01  showArrow:是否显示下拉箭头 defaultTime：草稿数据  outTimeEvent:组件返回获取的时间*/}
-                                    <HourTimer time="" type={false} defaultTime={this.state.dptTime} outTimeEvent={(data) => this.outTimeEvent(data)} />
-                                    <span style={{ whiteSpace: "nowrap", position: "absolute", color: "red", left: 229 }}>{dptTimeText}</span>
-                                </div>
-                                <div className={style['capacity-release-content-box']} style={{ marginTop: 10, width: 224, position: "relative" }}>
-                                    <div className={style['capacity-release-content-filter-type']}><span className={style['capacity-release-content-span']}>进</span>进港时段</div>
-                                    {/*<TimePicker format={format} value={inTimeDefault} popupClassName={style['test']} placeholder={""} onChange={this.arrvTime.bind(this)}/>*/}
-                                    {/*<div className={style['timeComponent']}>*/}
+                        <div className={style['arrv_time']} style={{display: "flex",justifyContent:"space-between"}}>
+                            <div className={style['inOut']}>
+                                <div className={style['borderline']} style={{ width: 10, border: "1px solid #3e76fb", borderRight: "0px", marginTop: 11 }}></div>
+                                <div>
+                                    <div className={style['capacity-release-content-box']} style={{ width: 224, position: "relative" }}>
+                                        <div className={style['capacity-release-content-filter-type']}><span className={style['capacity-release-content-span']}>出</span>出港时段</div>
+                                        {/*<TimePicker format={format} value={outTimeDefault} popupClassName={style['test']} placeholder={""} onChange={this.dptTime.bind(this)}/>*/}
+                                        {/*time:禁选条件，“”未没有，如有：格式2018-06-01  showArrow:是否显示下拉箭头 defaultTime：草稿数据  outTimeEvent:组件返回获取的时间*/}
+                                        <HourTimer time="" type={false} defaultTime={this.state.dptTime} outTimeEvent={(data) => this.outTimeEvent(data)} />
+                                        <span style={{ whiteSpace: "nowrap", position: "absolute", color: "red", top:43}}>{dptTimeText}</span>
+                                    </div>
+                                    <div className={style['capacity-release-content-box']} style={{ width: 224, position: "relative" }}>
+                                        <div className={style['capacity-release-content-filter-type']}><span className={style['capacity-release-content-span']}>进</span>进港时段</div>
+                                        {/*<TimePicker format={format} value={inTimeDefault} popupClassName={style['test']} placeholder={""} onChange={this.arrvTime.bind(this)}/>*/}
+                                        {/*<div className={style['timeComponent']}>*/}
                                         {/*<TimeComponent inTimeEvent={(data) => this.inTimeEvent(data)} intimeStyle={this.state.intimeType} defaultTime={this.state.arrvTime} time="05:15" />*/}
-                                    {/*</div>*/}
-                                    <HourTimer time={this.state.dptTime} type={this.state.dptTime ? false : true} defaultTime={this.state.arrvTime} inTimeEvent={(data) => this.inTimeEvent(data)} />
-                                    <span style={{ whiteSpace: "nowrap", position: "absolute", color: "red", left: 229 }}>{arrvTimeText}</span>
+                                        {/*</div>*/}
+                                        <HourTimer time={this.state.dptTime} type={this.state.dptTime ? false : true} defaultTime={this.state.arrvTime} inTimeEvent={(data) => this.inTimeEvent(data)} />
+                                        <span style={{ whiteSpace: "nowrap", position: "absolute", color: "red", top: 43 }}>{arrvTimeText}</span>
+                                    </div>
                                 </div>
                             </div>
+                            <div className={style['point']}>
+                                {
+                                    this.state.stopType=="noStop"
+                                        ?<CapacityPoint textType={'目标'} areaType={this.state.areaType} arrv={this.state.arrv} lockType={this.state.mandatoryDesignation} dpt={this.state.dpt} hintObj={this.state.hintText} lockEvent={(data)=>this.jiltFlyEvent(data)} dataObj={(data)=>this.jiltFlyData(data)}/>
+                                        :<Fragment>
+                                            <div>
+                                                {/*显示文案类型:textType 目标 经停 甩飞*/}
+                                                <CapacityPoint textType={'经停'}  pstAreaType={this.state.pstAreaType} pst={this.state.pst} lockType={this.state.pstMandatoryDesignation}  dpt={this.state.dpt} arrv={this.state.arrv} hintObj={this.state.hintText} lockEvent={(data)=>this.transitEvent(data)} dataObj={(data)=>this.transitData(data)}/>
+                                            </div>
+                                            <div>
+                                                <CapacityPoint  textType={'甩飞'}  areaType={this.state.areaType} arrv={this.state.arrv} lockType={this.state.mandatoryDesignation} dpt={this.state.dpt} pst={this.state.pst} hintObj={this.state.hintText} lockEvent={(data)=>this.jiltFlyEvent(data)} dataObj={(data)=>this.jiltFlyData(data)}/>
+                                            </div>
+                                        </Fragment>
+                                }
+
+                            </div>
                         </div>
-                        <div className={style['capacity-release-content-flex']} style={{ marginTop: 13 }}>
+                        <div className={style['capacity-release-content-flex']} style={{ marginTop: 17 }}>
                             <div className={style['capacity-release-content-offer']}>
                                 <div style={{ marginRight: 12, paddingTop: 11,paddingLeft:5 }}>报价</div>
                                 <div style={{ position: "relative",backgroundColor:"#f6f6f6"}}>
@@ -2412,10 +2653,10 @@ export default class CapacityRelease extends Component {
                             <span className={style['row-border']} style={{ top: '66px' }}></span>
                             <span style={{ position: 'absolute', bottom: '0px', right: '10px' }}>{this.state.textNum}/80</span>
                         </div>
-                        <div className={style['capacity-release-content-flex']} style={{marginTop:28}}>
+                        <div className={style['capacity-release-content-flex']} style={{marginTop:20}}>
                             <div className={style['capacity-release-content-box']}>
                                 <div className={style['capacity-release-content-filter-type']}>联系人</div>
-                                <Input className={style['capacity-release-input-hover']} value={this.state.contact} onChange={this.contact}></Input>
+                                <Input className={style['capacity-release-input-hover']} maxLength={20} value={this.state.contact} onChange={this.contact}></Input>
                                 <span style={{ whiteSpace: "nowrap", position: "absolute", color: "red", top: 43 }}>{contactText}</span>
                             </div>
                             <div className={style['capacity-release-content-box']} style={{ position: "relative" }}>
@@ -2432,7 +2673,7 @@ export default class CapacityRelease extends Component {
                                         全权委托平台帮我运营这个运力
                                         <IconInfo placement={"top"} title={"全权委托航遇平台来帮您投放此运力，专业，省心。"}/>
                                     </Checkbox>
-                                    <img src={require('../../static/img/12.jpg')} alt="省时、省钱、省心"/>
+                                    {/*<img src={require('../../static/img/12.jpg')} alt="省时、省钱、省心"/>*/}
                                 </div>
                             </div>
                            <div style={{paddingLeft:63,paddingRight:63}}>
@@ -2504,7 +2745,7 @@ export default class CapacityRelease extends Component {
                                                 _this.judgeDraft()
                                             }, 300)
                                         }} />
-                                        <Btn text='取消' btnType="0" styleJson={{ width: "90px", marginLeft: "20px",padding:0 }} onClick={this.closeFrom.bind(this)} />
+                                        <Btn text='取消' btnType="0" styleJson={{ width: "90px", marginLeft: "20px",padding:0,position:"relative",zIndex:100 }} onClick={this.closeFrom.bind(this)} />
                                     </div>
                                 </div>
                             </div>

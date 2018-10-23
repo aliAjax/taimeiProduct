@@ -2,6 +2,7 @@
 import React, { Component, Fragment } from 'react';
 import { store } from "../../../store/index";
 import emitter from "../../../utils/events";
+import { Modal} from 'antd';
 import style from "../../../static/css/userCenter/myIntention/myIntention.scss";
 
 export default class MyIntentionItem extends Component {
@@ -12,10 +13,18 @@ export default class MyIntentionItem extends Component {
     }
     //点击显示详情事件
     returnData() {
-        let showDetailsType = this.props.showDetailsType;
-        showDetailsType = !showDetailsType;
-        let id = this.props.data.demandId;
-        this.props.showDetailsEvent(id, showDetailsType);
+        if(this.props.data.demandProgress==12){
+            Modal.error({
+                title: '信息提示：',
+                content: '该需求正在重新编辑，请在编辑完成后重试。',
+                className: ""
+            });
+        }else {
+            let showDetailsType = this.props.showDetailsType;
+            showDetailsType = !showDetailsType;
+            let id = this.props.data.demandId;
+            this.props.showDetailsEvent(id, showDetailsType);
+        }
     };
 
     //点击洽谈

@@ -43,7 +43,31 @@
         margin-left: 1rem;
     }
 }
-
+@media screen and (max-width: 1366px) {
+  .search-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 240px;
+    height: 26px;
+    background: white;
+    border-radius: 20px;
+    input {
+      width: 280px;
+      outline: none;
+      border: none;
+      height: 26px;
+    }
+    .icon-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 35px;
+      height: 30px;
+      font-size: 25px;
+    }
+  }
+}
 
 
 

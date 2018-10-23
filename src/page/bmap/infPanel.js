@@ -144,7 +144,7 @@ export default class InfPanel extends Component{
                     airType:mes.airpotcls == '' ? "-" : mes.airpotcls,
                     flyL:mes.airfieldlvl == '' ? '-' : mes.airfieldlvl,
                     isgj:mes.inter == '0' ? "否" : "是",
-                    fxzdl:mes.releasepunctuality == '' ? "-" : mes.releasepunctuality + "%",
+                    fxzdl:(mes.releasepunctuality == '' || mes.releasepunctuality == "无数据") ? "-" : mes.releasepunctuality + "%",
                     xfdj:mes.firelvl == '' ? "-" : mes.firelvl
                 };
                 this.state.basicMes = obj;

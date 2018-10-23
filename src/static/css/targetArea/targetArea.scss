@@ -1,5 +1,5 @@
 .indexBox{
-  width: 200px;
+  min-width: 245px;
   height:40px;
   display: flex;
   padding-left: 10px;
@@ -15,4 +15,9 @@
 
 .noShow{
   display: none;
+}
+.last{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
 }

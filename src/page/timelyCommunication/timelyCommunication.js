@@ -360,6 +360,12 @@ export default class TimelyCommunication extends Component{
         });
         return node;
     }
+    keyPress(e){
+        if(e.keyCode === 13){
+            e.preventDefault();
+            this.sendData();
+        }
+    }
     sChangec(){
         if(this.state.setId != 'x-t-null'){
         // if(1==0){
@@ -378,13 +384,13 @@ export default class TimelyCommunication extends Component{
                     {
                         this.state.chatData[this.state.setId].isSendMessage === "1" ?
                             <div className={style["chat-function-input"]} key={"chat-function-input-0"}>
-                                <textarea className={style["chat-hover"]} maxLength={200} name="a" ref="textarea" onInput={this.inputTextarea.bind(this)} onMouseDown={(e)=>{e.stopPropagation()}}></textarea>
-                                <div onClick={this.sendData.bind(this)} className={classNames({"btn":true,'btn-b':true,[style['user-select']]:true,[style['req-bth']]:true})} id="req-bth">发送</div>
+                                <textarea onKeyDown={this.keyPress.bind(this)} className={style["chat-hover"]} maxLength={200} name="a" ref="textarea" onInput={this.inputTextarea.bind(this)} onMouseDown={(e)=>{e.stopPropagation()}}></textarea>
+                                <div onClick={this.sendData.bind(this)} className={classNames({"btn":true,'btn-b':true,[style['user-select']]:true,[style['req-bth']]:true})} id="req-bth">发送(Enter)</div>
                             </div>
                             :
                             <div className={style["chat-function-input"]} key={"chat-function-input-1"}>
                                 <textarea className={style["chat-hover"]} style={{paddingTop:"25px",fontSize:"14px",color:"rgba(204,204,204,1)"}} disabled='disabled' value="需求已完成或关闭，不能发送消息"></textarea>
-                                <div className={classNames({[style['user-select']]:true,[style['req-bth']]:true,'may-btn-gary':true})} id="req-bth">发送</div>
+                                <div className={classNames({[style['user-select']]:true,[style['req-bth']]:true,'may-btn-gary':true})} id="req-bth">发送(Enter)</div>
                             </div>
                     }
                 </div>
@@ -571,45 +577,40 @@ export default class TimelyCommunication extends Component{
         });
     }
     updataSys(val){
-        Axios({
-            url:"/updateSystemState",
-            method: "post",
-            headers: {
-                "Content-type": "application/x-www-form-urlencoded"
-            },
-            params: {
-                id:val.id
-            }
-        }).then((res)=>{
-            this.state.chatData['x-t-null'].chatRcord.list.forEach((value,ky)=>{
-                if(value.id === val.id){
-                    this.state.chatData['x-t-null'].chatRcord.list[ky].state = "0";
-                    let num = 0;
-                    this.state.chatData['x-t-null'].chatRcord.list.forEach((val,key)=>{
-                        if(val.state !== '0'){
-                            num += 1;
-                        }
-                    });
-                    this.state.chatData['x-t-null'].noReadCount = num;
-                    this.setState(()=>({
-                        chatData:this.state.chatData
-                    }),function () {
-                        this.updateNum();
-                        let data ={
-                            openFrom:true,
-                            fromType:3,
-                            fromMes:{
-                                tabType:'mine',
-                                transmit:{
-                                    id:val.demandId
-                                }
-                            }
-                        };
-                        emitter.emit('openFrom',data);
-                    });
+        let data;
+        if(val.textType === "3"){
+            data = {
+                openFrom:true,
+                fromType:6,
+                fromMes: {
+                    type:false
                 }
+            };
+            emitter.emit('openFrom',data)
+        }else{
+            Axios({
+                url:"/updateSystemState",
+                method: "post",
+                headers: {
+                    "Content-type": "application/x-www-form-urlencoded"
+                },
+                params: {
+                    id:val.id
+                }
+            }).then((res)=>{
+                data ={
+                    openFrom:true,
+                    fromType:3,
+                    fromMes:{
+                        tabType:'mine',
+                        transmit:{
+                            id:val.demandId
+                        }
+                    }
+                };
+                emitter.emit('openFrom',data);
             });
-        });
+        };
     }
     updataMes(key){
         if(this.state.chatData[key].noReadCount === 0)return;

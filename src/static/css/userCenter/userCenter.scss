@@ -1,5 +1,7 @@
 .userCenterBox{
   position:absolute;
+  top: 0;
+  left: 0;
   z-index:10;
   width:100%;
   height:100%;
@@ -7,7 +9,7 @@
   background-color:white;
   display: flex;
   flex-flow: column nowrap;
-  overflow-y: scroll;
+  //overflow-y: scroll;
 }
 .userCenterBox-mes{
   height:240px;
@@ -104,9 +106,23 @@
 .userCenterBox-from{
   flex:1 1 auto;
   background-color: #f8f8f8;
+  overflow-y: scroll;
 }
 .from-box{
   width: 1000px;
   margin: 0 auto;
   height: 100%;
+}
+@media screen and (max-width: 1366px) {
+  .userCenterBox{
+    position:absolute;
+    z-index:10;
+    width:100%;
+    height:100%;
+    padding-top:50px;
+    background-color:white;
+    display: flex;
+    flex-flow: column nowrap;
+    //overflow-y: scroll;
+  }
 }

@@ -10,7 +10,8 @@ import CapacityRelease from './capacityRelease';
 import ItemDetailForm from './itemDetailForm';
 import MyOrderForm from './myOrderForm';
 import AccountOperation from './accountOperation/accountOperation'
-import MeasuringRecord from './measuringRecord'
+import MeasuringRecord from './measuringRecord';
+import Financing from './financing';
 // import AirportDemandDetail from './airportDemandDetail';
 
 
@@ -51,9 +52,9 @@ export default class FromBox extends Component {
                     chongxinshangjia={this.props.fromMes.transmit.chongxinshangjia ? this.props.fromMes.transmit : false}/>;
                 break;
             case 1:
-                console.log(this.props)
                 return  <CapacityRelease
-                    bianjiAgain={this.props.fromMes.transmit.bianjiAgain ? this.props.fromMes.transmit : false}
+                    // bianjiAgain={this.props.fromMes.transmit.bianjiAgain ? this.props.fromMes.transmit : false}
+                    bianjiAgain={this.props.fromMes.transmit}
                     caogaoxiang={this.props.fromMes.transmit.caogaoxiang ? this.props.fromMes.transmit : false}
                     chongxinshangjia={this.props.fromMes.transmit.chongxinshangjia ? this.props.fromMes.transmit : false}
                 />;
@@ -70,6 +71,10 @@ export default class FromBox extends Component {
             case 5:
                 return <MyOrderForm fromMes={this.props.fromMes}/>;
                 break;
+            case 6:
+                return <Financing
+                            fromMes={this.props.fromMes?this.props.fromMes:{type:true}}
+                        />
             // case 4:
             //     return <AirportMarketDetail/>;
             //     break;
@@ -85,7 +90,7 @@ export default class FromBox extends Component {
                 in={showBox}
                 unmountOnExit
             >
-                <div className={style["form-box"]} style={{height:`${this.state.height - 65}px`}}>
+                <div className={style["form-box"]} style={{height:`${this.state.height - (document.body.clientWidth <= 1366 ? 50 : 65)}px`}}>
                     {this.renderFrom()}
                 </div>
             </CSSTransition>

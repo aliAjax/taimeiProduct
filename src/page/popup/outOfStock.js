@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import Axios from "./../../utils/axiosInterceptors";
 import { store } from './../../store/index';
 import emitter from '../../utils/events';
-import { Checkbox ,Modal} from 'antd';
+import { Checkbox, Modal } from 'antd';
 
 import style from './../../static/css/popup/outOfStock.scss';
 
@@ -13,77 +13,78 @@ export default class OutofStock extends Component {
         this.state = {
             isMsg: true,
             isoutof: false,
-            otherCheck:false,
-            otherType:true,//是否禁用textarea
-            other:'',
-            data:"",//异步请求数据
-            dataList:[],//存储多选原因数据
-            textNum:0,//输入字数
-            list1:false,//运力调整是否选中，false未选中
-            list2:false,//时刻航权是否选中，false未选中
-            list3:false,//处罚限制是否选中，false未选中
+            otherCheck: false,
+            otherType: true,//是否禁用textarea
+            other: '',
+            data: "",//异步请求数据
+            dataList: [],//存储多选原因数据
+            textNum: 0,//输入字数
+            list1: false,//运力调整是否选中，false未选中
+            list2: false,//时刻航权是否选中，false未选中
+            list3: false,//处罚限制是否选中，false未选中
+            loading: false,
         }
     }
     componentWillMount() {
 
     }
     //TODO:删除数组中某条数据
-    delDate(data){
-        let dataList=this.state.dataList;
-        for(let i=0;i<dataList.length;i++){
-            if(dataList[i]==data){
-                dataList.splice(i,1)
+    delDate(data) {
+        let dataList = this.state.dataList;
+        for (let i = 0; i < dataList.length; i++) {
+            if (dataList[i] == data) {
+                dataList.splice(i, 1)
                 return dataList
             }
         };
     }
 
     //多选原因
-    clickEvent1(){
-        let dataList=this.state.dataList;
-        if(this.state.list1){
-           dataList=this.delDate("运力调整")
-        }else {
+    clickEvent1() {
+        let dataList = this.state.dataList;
+        if (this.state.list1) {
+            dataList = this.delDate("运力调整")
+        } else {
             dataList.push("运力调整")
         };
         this.setState({
-            list1:!this.state.list1,
+            list1: !this.state.list1,
             dataList,
-            otherCheck:false,
-            otherType:true,
-            other:""
+            otherCheck: false,
+            otherType: true,
+            other: ""
         })
     }
 
-    clickEvent2(){
-        let dataList=this.state.dataList;
-        if(this.state.list2){
-            dataList=this.delDate("时刻航权")
-        }else {
+    clickEvent2() {
+        let dataList = this.state.dataList;
+        if (this.state.list2) {
+            dataList = this.delDate("时刻航权")
+        } else {
             dataList.push("时刻航权")
         };
         this.setState({
-            list2:!this.state.list2,
+            list2: !this.state.list2,
             dataList,
-            otherCheck:false,
-            otherType:true,
-            other:""
+            otherCheck: false,
+            otherType: true,
+            other: ""
         })
     }
 
-    clickEvent3(){
-        let dataList=this.state.dataList;
-        if(this.state.list3){
-            dataList=this.delDate("处罚限制")
-        }else {
+    clickEvent3() {
+        let dataList = this.state.dataList;
+        if (this.state.list3) {
+            dataList = this.delDate("处罚限制")
+        } else {
             dataList.push("处罚限制")
         };
         this.setState({
-            list3:!this.state.list3,
+            list3: !this.state.list3,
             dataList,
-            otherCheck:false,
-            otherType:true,
-            other:""
+            otherCheck: false,
+            otherType: true,
+            other: ""
         })
     }
     // 航路调整
@@ -102,38 +103,41 @@ export default class OutofStock extends Component {
         })
     }
     // TODO: 下架原因 尚未对角色判定
-    
+
     //点击确定 下架需求
     handleOutofStock = (id) => {
-        if(this.state.dataList.length==0&&this.state.otherCheck==false){
+        if (this.state.dataList.length == 0 && this.state.otherCheck == false) {
             Modal.error({
                 title: '信息提示：',
                 content: '请填写下架原因',
-                onOk(){
+                onOk() {
                 },
-                className:"test"
+                className: "test"
             });
-        }else if(this.state.dataList.length==0&&this.state.otherCheck==true&&this.state.other==""){
+        } else if (this.state.dataList.length == 0 && this.state.otherCheck == true && this.state.other == "") {
             Modal.error({
                 title: '信息提示：',
                 content: '请输入具体原因',
-                onOk(){
+                onOk() {
                 },
-                className:"test"
+                className: "test"
             });
-        }else {
+        } else {
+            this.setState({
+                loading: true
+            })
             let paramsData;
-            if(this.state.dataList.length!=0){
-                paramsData=this.state.dataList.join("€")
-            }else{
-                paramsData=this.state.other
+            if (this.state.dataList.length != 0) {
+                paramsData = this.state.dataList.join("€")
+            } else {
+                paramsData = this.state.other
             };
             Axios({
                 url: 'closeDemandById',
                 method: 'post',
                 params: {
                     id: id,
-                    closeReason:paramsData
+                    closeReason: paramsData
                 }
             }).then((response) => {
                 if (response.data.opResult === '0') {
@@ -144,9 +148,9 @@ export default class OutofStock extends Component {
                     Modal.success({
                         title: '信息提示：',
                         content: '下架成功',
-                        onOk(){
+                        onOk() {
                         },
-                        className:"test"
+                        className: "test"
                     });
                     emitter.emit('renewWodefabu');
                 } else {
@@ -157,32 +161,35 @@ export default class OutofStock extends Component {
                     Modal.error({
                         title: '信息提示：',
                         content: response.data.msg,
-                        onOk(){
+                        onOk() {
                         },
-                        className:"test"
+                        className: "test"
+                    })
+                    this.setState({
+                        loading: false
                     })
                 }
             })
         }
     }
-    otherChange=(event)=>{
-            this.setState({
-                other: event.target.value,
-                textNum:event.target.value.length
-            })
+    otherChange = (event) => {
+        this.setState({
+            other: event.target.value,
+            textNum: event.target.value.length
+        })
     }
-    otherCheckChange=()=>{
+    otherCheckChange = () => {
         let otherType;
-        if(this.state.otherCheck){
-            otherType=true
-        }else {
-            otherType=false
+        if (this.state.otherCheck) {
+            otherType = true
+        } else {
+            otherType = false
         };
         this.setState({
-            list1:false,
-            list2:false,
-            list3:false,
-            dataList:[],
+            list1: false,
+            list2: false,
+            list3: false,
+            dataList: [],
             otherType,
             otherCheck: !this.state.otherCheck
         })
@@ -233,9 +240,9 @@ export default class OutofStock extends Component {
                                         <div className={style['textarea']}>
                                             <span></span>
                                             <span></span>
-                                            <textarea className={style['textarea']} value={this.state.other} placeholder={this.state.otherType?"请先选择其他，方可输入":"输入原因后点击确定按钮方可下架"} maxLength="75" disabled={this.state.otherType} onChange={this.otherChange}></textarea>
+                                            <textarea className={style['textarea']} value={this.state.other} placeholder={this.state.otherType ? "请先选择其他，方可输入" : "输入原因后点击确定按钮方可下架"} maxLength="75" disabled={this.state.otherType} onChange={this.otherChange}></textarea>
                                             <div>
-                                                <span style={{position: 'absolute', bottom: '4px', right: '10px',border:0}}>{this.state.textNum}/75</span>
+                                                <span style={{ position: 'absolute', bottom: '4px', right: '10px', border: 0 }}>{this.state.textNum}/75</span>
                                             </div>
                                         </div>
 
@@ -243,7 +250,7 @@ export default class OutofStock extends Component {
                                 </div>
                             </div>
                             <div className={style['footer']}>
-                                <button className={`${style['btn-blue-plus']} ${style['cancel']}`} onClick={this.handleOutofStock.bind(this,id)}>确定</button>
+                                <button className={`${style['btn-blue-plus']} ${style['cancel']}`} onClick={this.handleOutofStock.bind(this, id)} disabled={this.state.loading}>确定</button>
                                 <button className={`${style['btn-gray']} ${style['confirm']}`} onClick={this.cancel}>取消</button>
                             </div>
                         </div>

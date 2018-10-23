@@ -40,13 +40,15 @@ export default class MyDraftBox extends Component{
 
     orderTypeClickFn() {  // 点击发布时间
         this.state.orderType = this.state.orderType === 0 ? 1 : 0;
+        this.state.page = 1;
         this.reqData();
     }
     demandTypeClickFn({key}) {  // 点击需求类型
         this.state.typeMenu.forEach((val) => {
             if(val.key == key) {
                 this.setState({
-                    demandtypeStr: val.value
+                    demandtypeStr: val.value,
+                    page: 1,
                 })
             }
         });

@@ -5,6 +5,7 @@ import { Modal } from 'antd';
 import emitter from "../../utils/events";
 import Btn from "../button/btn";
 import DealPwd from '../dealPwd/dealPwd';
+import IconInfo from '../IconInfo/IconInfo';
 
 export default class PayEarnestMoneyChen extends Component {
     constructor(props) {
@@ -12,6 +13,7 @@ export default class PayEarnestMoneyChen extends Component {
         this.state = {
             showDealPwd: false,
             noMsgCesuan: false,
+            noMsgShaohou: false,  // 10.18增 稍后再付-等待中
             data: {}, // 从父组件获取的数据
         };
     }
@@ -49,6 +51,9 @@ export default class PayEarnestMoneyChen extends Component {
                 this.props.close('2');
                 this.error(response.data.msg);
             }
+            this.setState({
+                noMsgShaohou: false,
+            })
         })
     }
     sureClickFn() {
@@ -68,26 +73,30 @@ export default class PayEarnestMoneyChen extends Component {
     }
     closeClickFn() {
         this.state.data.savatype = 1;  // 1-保存方案(会成为待支付)，2-正式提交，3-保存草稿，4-机场申请测算时先保存草稿
-        Axios({
-            method: 'post',
-            url: '/responseAdd',
-            /*params:{  // 一起发送的URL参数
-                demandId: demandId,
-                employeeId: employeeId
-            },*/
-            data: JSON.stringify(this.state.data),
-            dataType:'json',
-            headers: {
-                'Content-type': 'application/json;charset=utf-8'
-            }
-        }).then((response)=>{
-            if(response.data.opResult === '0') {
-                this.props.close('1');
-                this.success('已为您保存方案，可在下次点击查看！');
-            }else {
-                this.error(response.data.msg);
-                this.props.close('2');
-            }
+        this.setState({
+            noMsgShaohou: true
+        }, () => {
+            Axios({
+                method: 'post',
+                url: '/responseAdd',
+                /*params:{  // 一起发送的URL参数
+                    demandId: demandId,
+                    employeeId: employeeId
+                },*/
+                data: JSON.stringify(this.state.data),
+                dataType:'json',
+                headers: {
+                    'Content-type': 'application/json;charset=utf-8'
+                }
+            }).then((response)=>{
+                if(response.data.opResult === '0') {
+                    this.props.close('1');
+                    this.success('已为您保存方案，可在下次点击查看！');
+                }else {
+                    this.error(response.data.msg);
+                    this.props.close('2');
+                }
+            })
         })
     }
     componentDidMount() {
@@ -96,6 +105,14 @@ export default class PayEarnestMoneyChen extends Component {
         })
     }
     render() {
+        let btnStyle = {
+            width: '190px',
+            height: '35px',
+            fontSize: '1.5rem',
+            lineHeight: '35px',
+            textAlign: 'center',
+            borderRadius: '20px',
+        };
         return (
             <div className={styles['earnest-wrapper']}>
                 {
@@ -111,7 +128,10 @@ export default class PayEarnestMoneyChen extends Component {
                             <div className={styles['content']}>
                                 <div>
                                     <div>{this.state.data.title}</div>
-                                    <div>意向金</div>
+                                    <div>
+                                        意向金
+                                        <IconInfo placement={"right"} title={"该意向金作为保证交易信息真实性使用，在订单完成前不会从账户实际扣除，仅作冻结处理，未达成交易则解冻。航线开通后可作为保证金使用。"}/>
+                                    </div>
                                 </div>
                                 <div>-{this.state.data.intentionMoney}</div>
                             </div>
@@ -121,11 +141,19 @@ export default class PayEarnestMoneyChen extends Component {
                                          btnType="1"
                                          otherText="支付中"
                                          isDisable={this.state.noMsgCesuan}
-                                         styleJson={{ width: "190px" }}
-                                         onClick={()=> { this.sureClickFn()} } />
+                                         styleJson={btnStyle}
+                                         onClick={this.sureClickFn.bind(this)} />
+                                </div>
+                                <div>
+                                    <Btn text='稍后再付'
+                                         btnType="0"
+                                         otherText="保存中"
+                                         isDisable={this.state.noMsgShaohou}
+                                         styleJson={btnStyle}
+                                         onClick={this.closeClickFn.bind(this)} />
                                 </div>
                                 {/*<div className={'btn-b'} onClick={this.sureClickFn.bind(this)}>确认</div>*/}
-                                <div className={'btn-w'} onClick={this.closeClickFn.bind(this)}>稍后再付</div>
+                                {/*<div className={'btn-w'} onClick={this.closeClickFn.bind(this)}>稍后再付</div>*/}
                             </div>
                         </div>
                 }

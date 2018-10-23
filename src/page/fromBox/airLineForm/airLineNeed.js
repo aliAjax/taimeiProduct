@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import Axios from "./../../../utils/axiosInterceptors";
 import styles from '../../../static/css/from/airLineNeed.scss'
 import AirportSearch from '../../../components/search/airportSearch'
@@ -19,6 +19,7 @@ import { Radio, Menu, Dropdown, Icon, DatePicker, Modal, Checkbox, Button } from
 import zhCN from 'antd/lib/locale-provider/zh_CN';
 import 'moment/locale/zh-cn';
 import IconInfo from '../../../components/IconInfo/IconInfo';
+import DealPwd from '../../../components/dealPwd/dealPwd';
 
 const RadioGroup = Radio.Group;
 const { RangePicker } = DatePicker;
@@ -28,6 +29,9 @@ export default class AirLineNeed extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            isSmall: false,  // 8.06 新增，是否是1366分辨率
+            saveDemand: {},  // 7.27增加，用来保存progress=12，demand
+            showDealPwd: false,  // 7.27 增加，重新编辑-demandprogress=12，支付交易密码
             demandprogress: '',  // 7.23 增加，用来判断是否是“需求发布”时的“重新编辑”；若是，则不弹出缴纳意向金窗口
             update: true,
             noMsgFabu: false,  // 表单发布
@@ -1179,6 +1183,11 @@ export default class AirLineNeed extends Component {
             }, ()=>{
                 if (this.state.saveDraftId != '' && this.state.saveDraftId != null) {
                     demand.id = this.state.saveDraftId;
+                    try{
+                        demand.releasetime = this.props.data.releasetime;
+                    }catch (e) {
+
+                    }
                     Axios({
                         method: 'post',
                         url: '/demandUpdate',
@@ -1379,84 +1388,104 @@ export default class AirLineNeed extends Component {
         }
         else {
             if(this.state.demandprogress == 12) {
-                demand.demandprogress = 12;  // 航线需求发布
+                if(this.state.demandtype == 3) {
+                    demand.demandprogress = '';   // 委托
+                }else {
+                    demand.demandprogress = 12;  // 航线需求发布
+                }
+                this.setState({   // 7.27 新增，demandprogress=12时，弹出支付密码
+                    showDealPwd: true,
+                    saveDemand: demand,  // 7.27 新增
+                });
             }else {
                 demand.demandprogress = '';  // 航线需求发布
+                this.sendChange(demand);
             }
-            this.setState({
-                noMsgFabu: true
-            }, ()=>{
-                if (this.state.saveDraftId != '' && this.state.saveDraftId != null) {
-                    demand.id = this.state.saveDraftId;
-                    Axios({
-                        method: 'post',
-                        url: '/demandUpdate',
-                        /*params:{  // 一起发送的URL参数
-                            page:1
-                        },*/
-                        data: JSON.stringify(demand),
-                        dataType: 'json',
-                        headers: {
-                            'Content-type': 'application/json;charset=utf-8'
-                        }
-                    }).then((response) => {
-                        if (response.data.opResult === '0') {
-                            let demandtype = Number(this.state.demandtype);
-                            let demandprogress = this.state.demandprogress;
-                            if (demandtype === 0 && demandprogress != 12) { //0: 航线需求  3: 委托航线
-                                this.setState({
-                                    showPayEarnestMoney: true,
-                                    payData: response.data
-                                });
-                            } else {
-                                this.success('发布成功！');
-                                this.closeFormBox();
-                            }
-                            emitter.emit("againMap");
-                            emitter.emit('renewCaogaoxiang');
-                            emitter.emit('renewWodefabu');
-                        } else {
-                            this.error('发布失败！');
-                            this.setState({
-                                noMsgFabu: false
-                            })
-                        }
-                    })
-                } else {
-                    Axios({
-                        method: 'post',
-                        url: '/demandAdd',
-                        /*params:{  // 一起发送的URL参数
-                            page:1
-                        },*/
-                        data: JSON.stringify(demand),
-                        dataType: 'json',
-                        headers: {
-                            'Content-type': 'application/json;charset=utf-8'
-                        }
-                    }).then((response) => {
-                        if (response.data.opResult === '0') {
-                            let demandtype = Number(this.state.demandtype);
-                            if (demandtype === 0) { //0: 航线需求  3: 委托航线
-                                this.setState({
-                                    showPayEarnestMoney: true,
-                                    payData: response.data
-                                });
-                            } else {
-                                this.success('发布成功！');
-                                this.closeFormBox();
-                            }
-                            emitter.emit('renewCaogaoxiang');
-                        } else {
-                            this.error('发布失败！');
-                            this.setState({
-                                noMsgFabu: false
-                            })
-                        }
-                    })
-                }
-            });
         }
+    }
+    sendChange(demand) {   // 7.27 根据需求更改，重新编辑时，只弹支付密码
+        this.setState({
+            noMsgFabu: true
+        }, ()=>{
+            if (this.state.saveDraftId != '' && this.state.saveDraftId != null) {
+                demand.id = this.state.saveDraftId;
+                try{
+                    demand.releasetime = this.props.data.releasetime;
+                }catch (e) {
+
+                }
+                Axios({
+                    method: 'post',
+                    url: '/demandUpdate',
+                    /*params:{  // 一起发送的URL参数
+                        page:1
+                    },*/
+                    data: JSON.stringify(demand),
+                    dataType: 'json',
+                    headers: {
+                        'Content-type': 'application/json;charset=utf-8'
+                    }
+                }).then((response) => {
+                    if (response.data.opResult === '0') {
+                        let demandtype = Number(this.state.demandtype);
+                        let demandprogress = this.state.demandprogress;
+                        if (demandtype === 0 && demandprogress != 12) { //0: 航线需求  3: 委托航线
+                            this.setState({
+                                showPayEarnestMoney: true,
+                                payData: response.data
+                            });
+                        } else {
+                            if(demandprogress == 11) {
+                                this.success('发布成功！');
+                            }else {
+                                this.success('更改成功！');
+                            }
+                            this.closeFormBox();
+                        }
+                        emitter.emit("againMap");
+                        emitter.emit('renewCaogaoxiang');
+                        emitter.emit('renewWodefabu');
+                    } else {
+                        this.error('发布失败！');
+                        this.setState({
+                            noMsgFabu: false
+                        })
+                    }
+                })
+            } else {
+                Axios({
+                    method: 'post',
+                    url: '/demandAdd',
+                    /*params:{  // 一起发送的URL参数
+                        page:1
+                    },*/
+                    data: JSON.stringify(demand),
+                    dataType: 'json',
+                    headers: {
+                        'Content-type': 'application/json;charset=utf-8'
+                    }
+                }).then((response) => {
+                    if (response.data.opResult === '0') {
+                        let demandtype = Number(this.state.demandtype);
+                        if (demandtype === 0) { //0: 航线需求  3: 委托航线
+                            this.setState({
+                                showPayEarnestMoney: true,
+                                payData: response.data
+                            });
+                        } else {
+                            this.success('发布成功！');
+                            this.closeFormBox();
+                        }
+                        emitter.emit('renewCaogaoxiang');
+                    } else {
+                        this.error('发布失败！');
+                        this.setState({
+                            noMsgFabu: false
+                        })
+                    }
+                })
+            }
+        });
     }
 
     closeMoneyFn(i) {  // 关闭支付意向金 1:成功  2：失败
@@ -1474,7 +1503,7 @@ export default class AirLineNeed extends Component {
         emitter.emit('renewWodefabu');
     }
     renewData(data) {
-        this.setData(data);
+        this.setData(data, 'shenqingcesuan');
     }
     closeMeasuringFn(i, index) {  // 关闭申请测算  1:成功  2：失败
         if (i == 1) {
@@ -1580,6 +1609,11 @@ export default class AirLineNeed extends Component {
                 let projectIndex = this.state.projectIndex;
                 if (this.state.saveDraftId != '' && this.state.saveDraftId != null) {
                     demand.id = this.state.saveDraftId;
+                    try{
+                        demand.releasetime = this.props.data.releasetime;
+                    }catch (e) {
+
+                    }
                     Axios({
                         method: 'post',
                         url: '/demandUpdate',
@@ -1730,7 +1764,7 @@ export default class AirLineNeed extends Component {
                 break;
         }
     }
-    setData(data) {
+    setData(data, shenqingcesuan) {
         try{
             if (Object.keys(data).length != 0) {
                 let targetPoint = data.targetPoint;  // 目标航点三字码
@@ -1780,7 +1814,7 @@ export default class AirLineNeed extends Component {
                     textNum = data.remark.length;
                 }
                 let periodValidity, sailingtime;
-                if(this.props.shangjiaBianji) {  //TODO：7.23增加,当重新上架、重新编辑时，需求有效期置空，计划执行时间“整年”
+                if(this.props.shangjiaBianji && !shenqingcesuan) {  //TODO：7.23增加,当重新上架、重新编辑时，需求有效期置空，计划执行时间“整年”
                     periodValidity = '';  // 需求有效期
                     sailingtime = '整年';
                 }else {
@@ -1817,7 +1851,12 @@ export default class AirLineNeed extends Component {
                 } catch (e) {
 
                 }
+                let alertShow = this.state.alertShow;
+                if(shenqingcesuan) {
+                    alertShow = false;
+                }
                 this.setState({
+                    alertShow,
                     demandprogress: data.demandprogress,
                     hangjiDisabled,
                     demandtype,
@@ -1853,11 +1892,35 @@ export default class AirLineNeed extends Component {
 
         }
     }
+    closeDealPwd() {
+        this.setState({
+            showDealPwd: false,
+        })
+    }
+    dealCloseFn(i) {  // 7.27增加 交易密码关闭
+        if(i == 1) {  // 1:验证成功-关闭，2：点击“取消”关闭
+            this.sendChange(this.state.saveDemand);
+        }else {
+            this.closeDealPwd();
+        }
+    }
+    forgetPwd() {  // 7.27增加 忘记密码
+
+    }
     componentWillReceiveProps(nextProps) {  // TODO: initData  没有草稿了，不需要绑定数据了
         this.setData(nextProps.data);
     }
     componentDidMount() {
+        // let mes = <span>llllll啦啦啦啦啦啦啦233 <span style={{color: 'red'}}>span</span></span>;
+        // this.success(mes);
         this.setData(this.props.data);
+        let clientWidth = document.documentElement.clientWidth;  // 8.06 新增，1366分辨率下，样式改变
+        let isSmall = false;
+        if(clientWidth <= 1366) {
+            isSmall = true;
+        }else {
+            isSmall = false;
+        }
         let myCode = store.getState().role.airlineretrievalcondition; // 本机场三字码
         let myName;
         store.getState().airList.forEach((val) => {  // 本机场名字
@@ -1866,7 +1929,8 @@ export default class AirLineNeed extends Component {
             }
         });
         this.setState({
-            myHeight: document.body.clientHeight - 130,
+            isSmall,  // 是否是1366分辨率
+            myHeight: document.body.clientHeight - 115,
             myCode: myCode,
             myName: myName,
             contact: store.getState().role.concat,  // 联系人
@@ -1896,13 +1960,17 @@ export default class AirLineNeed extends Component {
     projectState(item, index) {  // 测算状态(0-正常，1-删除，2-测算中，3-测算完成)
         let _this = this;
         let state = Number(item.state);
+        let styleJson = { margin: '0 30px', padding: '5px 13px', height: '28px', borderRadius: '20px', color: '#5772BF', fontSize: '1.2rem', whiteSpace: 'nowrap' };
+        let styleJsonSmall = { margin: '0 21px 0 14px', padding: '5px 13px', height: '28px', borderRadius: '20px', color: '#5772BF', fontSize: '1.2rem', whiteSpace: 'nowrap' }
+        let style = { padding: '5px 13px', borderRadius: '20px', margin: '0 30px', color: '#5772BF' };
+        let styleSmall = { padding: '5px 13px', borderRadius: '20px', margin: '0 21px 0 14px', color: '#5772BF' };
         if (state === 0) {
             return (
                 <Btn text='申请测算'
                      btnType="0"
                      otherText="申请中"
                      isDisable={this.state.noMsgCesuan}
-                     styleJson={{ margin: '0 30px', padding: '5px 13px', height: '28px', borderRadius: '20px', color: '#5772BF', fontSize: '1.2rem', whiteSpace: 'nowrap' }}
+                     styleJson={this.state.isSmall ? styleJsonSmall : styleJson}
                      onClick={()=> { _this.measuringClickFn(item, index)} } />
                 //<div className={'btn-w'}
                   //  style={{ padding: '5px 13px', borderRadius: '20px', margin: '0 30px', color: '#5772BF', whiteSpace: 'nowrap' }}
@@ -1910,11 +1978,11 @@ export default class AirLineNeed extends Component {
             )
         } else if (state === 2) {
             return (
-                <div style={{ padding: '5px 13px', borderRadius: '20px', margin: '0 30px', color: '#5772BF' }}>测算中</div>
+                <div style={this.state.isSmall ? styleSmall : style}>测算中</div>
             )
         } else if (state === 3) {
             return (
-                <div style={{ padding: '5px 13px', borderRadius: '20px', margin: '0 30px', color: '#5772BF' }}>测算完成</div>
+                <div style={this.state.isSmall ? styleSmall : style}>测算完成</div>
             )
         }
     }
@@ -1943,6 +2011,18 @@ export default class AirLineNeed extends Component {
             top: '40px',
             left: '-10px',
             maxHeight: '220px',
+            width: '220px',
+            overflowY: 'scroll',
+            background: 'white',
+            zIndex: 22,
+            boxShadow: '0 2px 11px rgba(85,85,85,0.1)'
+        };
+        let axisLeft = {  // 下拉搜索样式
+            position: 'absolute',
+            top: '40px',
+            left: '-67px',
+            maxHeight: '220px',
+            width: '220px',
             overflowY: 'scroll',
             background: 'white',
             zIndex: 22,
@@ -1983,12 +2063,12 @@ export default class AirLineNeed extends Component {
                 searchText={this.state.searchText3} />;
         let arrvAirportSearch = this.state.internationalAirline == 1
             ? <AirportSearch
-                axis={axis}
+                axis={this.state.isSmall ? axisLeft : axis}
                 update={this.state.update}
                 resData={this.airportData4.bind(this)}
                 searchText={this.state.searchText4} />
             : <AllAirportSearch
-                axis={axis}
+                axis={this.state.isSmall ? axisLeft : axis}
                 update={this.state.update}
                 resData={this.airportData4.bind(this)}
                 searchText={this.state.searchText4} />;
@@ -2025,8 +2105,8 @@ export default class AirLineNeed extends Component {
                                     </div>
                                 </div>
                             </div>
-                            <div className={styles['border']}></div>
-                            <div style={{ width: '130px', paddingLeft: '25px', boxSizing: 'border-box' }}>
+                            <div className={`${styles['border']} ${styles['border1']}`}></div>
+                            <div style={{ width: '130px', boxSizing: 'border-box' }}>
                                 <div className={styles['marginBottom']}>报价</div>
                                 <div className={`${styles['bold']} ${styles['text-height']}`}>
                                     <span style={{ display: 'inline-block', minWidth: '30px' }}>
@@ -2118,14 +2198,14 @@ export default class AirLineNeed extends Component {
             ? null
             : moment(this.state.periodValidity, dateFormat);
         let passInput = this.state.showPassInput
-            ? <div className={styles['col-box']} style={{ marginBottom: '20px' }}>
+            ? <div className={`${styles['col-box']} ${styles['screen-change-target']}`} style={{ marginBottom: '20px' }}>
                 <div className={styles['col-text']}>
                     <span className={'iconfont'} style={{ fontSize: '20px' }}>&#xe6ad;</span>
                 </div>
                 <div className={styles['col-input']}>
                     <input type="text"
                         ref={'needInput2'}
-                        style={{ width: '185px' }}
+                        style={ this.state.isSmall ? {width: '130px'} : {width: '185px'} }
                         maxLength="20"
                         placeholder="请输入航点"
                         value={this.state.searchText3}
@@ -2137,7 +2217,7 @@ export default class AirLineNeed extends Component {
                     }
                 </div>
             </div>
-            : <div className={styles['col-box']} style={{ marginBottom: '20px', background: 'transparent' }}></div>
+            : <div className={`${styles['col-box']} ${styles['screen-change-target']}`} style={{ marginBottom: '20px', background: 'transparent' }}></div>
         return (
             <div className={`scroll ${styles['airline-need']}`}
                 style={{ height: `${this.state.myHeight}px` }}
@@ -2146,6 +2226,12 @@ export default class AirLineNeed extends Component {
                 <span className={`${'iconfont'} ${styles['closeIcon']}`}
                     onClick={this.closeIconClickFn.bind(this)}>&#xe62c;</span>
                 {
+                    this.state.showDealPwd && <div style={{position: 'fixed', top: '0', left: '0', bottom: '0', right: '0',display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(0, 0, 0, 0.4)', zIndex: '30'}}>
+                        <DealPwd close={this.dealCloseFn.bind(this)}
+                                 forgetPwd={this.forgetPwd.bind(this)} />
+                    </div>
+                }
+                {
                     this.state.showPayEarnestMoney && <PayEarnestMoney
                         data={this.state.payData}
                         close={this.closeMoneyFn.bind(this)} />
@@ -2153,6 +2239,7 @@ export default class AirLineNeed extends Component {
                 {
                     this.state.showApplyMeasuring && <ApplyMeasuring
                         data={this.state.applyMeasuringData}
+                        daizhifu={this.props.data.demandprogress == '-1' ? true : false}
                         renewData={this.renewData.bind(this)}
                         close={this.closeMeasuringFn.bind(this)} />
                 }
@@ -2184,22 +2271,22 @@ export default class AirLineNeed extends Component {
                         <Radio value={2} disabled={this.state.disableOrNot} style={{ fontSize: '1.2rem' }}>国际航线</Radio>
                     </RadioGroup>
                     {
-                        this.state.disableOrNot ? (<div className={styles['col-box']} style={{ opacity: '0.4' }}>
+                        this.state.disableOrNot ? (<div className={`${styles['col-box']} ${styles['screen-change-target']}`} style={{ opacity: '0.4' }}>
                             <div className={styles['col-text']} style={{color: '#605e7c'}}>目标航点</div>
                             <div className={styles['col-input']}>
                                 <input type="text"
-                                    style={{ width: '154px' }}
+                                    style={ this.state.isSmall ? {width: '110px'} : {width: '154px'} }
                                     placeholder={'请输入目标航点'}
                                     maxLength="20"
                                     value={this.state.searchText1}
                                     disabled={true} />
                             </div>
-                        </div>) : (<div className={styles['col-box']}>
+                        </div>) : (<div className={`${styles['col-box']} ${styles['screen-change-target']}`}>
                             <div className={styles['col-text']}>目标航点</div>
                             <div className={styles['col-input']}>
                                 <input type="text"
                                     ref={'needInput4'}
-                                    style={{ width: '154px' }}
+                                    style={ this.state.isSmall ? {width: '110px'} : {width: '154px'} }
                                     placeholder={'请输入目标航点'}
                                     maxLength="20"
                                     value={this.state.searchText1}
@@ -2260,14 +2347,14 @@ export default class AirLineNeed extends Component {
                                     </div>
                                 </div>
                                 {passInput}
-                                <div className={styles['col-box']} style={{ marginBottom: '20px' }}>
+                                <div className={`${styles['col-box']} ${styles['screen-change-target']}`} style={{ marginBottom: '20px' }}>
                                     <div className={styles['col-text']}>
                                         <span className={'iconfont'} style={{ fontSize: '20px' }}>&#xe672;</span>
                                     </div>
                                     <div className={styles['col-input']}>
                                         <input type="text"
                                             ref={'needInput3'}
-                                            style={{ width: '185px' }}
+                                            style={ this.state.isSmall ? {width: '130px'} : {width: '185px'} }
                                             maxLength="20"
                                             placeholder="请输入航点"
                                             value={this.state.searchText4}
@@ -2345,7 +2432,7 @@ export default class AirLineNeed extends Component {
                             </div>
                         </div>
                         <div className={`${styles['fifth']} ${styles['flex']}`}>
-                            <div className={styles['col-box']} style={{ background: '#F6F6F6' }}>
+                            <div className={`${styles['col-box']} ${styles['screen-change-target']}`} style={{ background: '#F6F6F6' }}>
                                 <div className={styles['col-text']}>适航机型</div>
                                 <div className={styles['col-input']}>
                                     <DimAir defaultData={this.state.aircrfttyp} dimEvent={this.dimEvent.bind(this)} />
@@ -2360,7 +2447,7 @@ export default class AirLineNeed extends Component {
                                     }
                                 </div>
                             </div>
-                            <div className={styles['col-box']} style={{ position: 'relative', background: '#F6F6F6' }}>
+                            <div className={`${styles['col-box']} ${styles['screen-change-target']}`} style={{ position: 'relative', background: '#F6F6F6' }}>
                                 <div className={styles['col-text']}>需求有效期</div>
                                 <div onClick={(e) => { e.stopPropagation() }}>
                                     <DatePicker className={styles['range-picker2']}
@@ -2503,7 +2590,7 @@ export default class AirLineNeed extends Component {
                                     }
                                 </div>
                             </div>
-                            <div className={styles['col-box']} style={{ background: 'transparent' }}></div>
+                            <div className={`${styles['col-box']} ${styles['screen-change-target2']}`} style={{ background: 'transparent' }}></div>
                         </div>
                         <div style={{ height: '130px' }}></div>
                         <div className={styles['ninth']}>
@@ -2512,7 +2599,7 @@ export default class AirLineNeed extends Component {
                                     全权委托平台帮我开通此条航线
                                     <IconInfo placement={"right"} title={"全权委托航遇平台来帮您开通此航线，专业、省心。"}/>
                                 </Checkbox>
-                                <img src={require('../../../static/img/12.jpg')} alt="省时、省钱、省心"/>
+                                {/*<img src={require('../../../static/img/12.jpg')} alt="省时、省钱、省心"/>*/}
                             </div>
                         </div>
                         <div className={`${styles['buttons']} ${styles['flex']}`}>
@@ -2529,9 +2616,9 @@ export default class AirLineNeed extends Component {
                                // <div className={'btn-w'} style={{ width: '100px' }} onClick={this.saveSendDataFn.bind(this, 1)}>保存草稿</div>
                             }
                             <div style={{padding: '0'}}>
-                                <Btn text='确认发布航线信息'
+                                <Btn text={this.state.demandprogress == 12 ? '确认更改' : '确认发布航线信息'}
                                      btnType="1"
-                                     otherText="发布中"
+                                     otherText={this.state.demandprogress == 12 ? '更改中' : '发布中'}
                                      isDisable={this.state.noMsgFabu}
                                      styleJson={{ width: "250px", padding: '0' }}
                                      onClick={()=> { _this.sendDataFn()} } />

@@ -178,6 +178,7 @@
       align-items: center;
       > div:first-of-type {
         color: rgba(96, 94, 124, 0.7);
+        flex: 0 0 auto;
       }
       > div:last-of-type {
         color: #605e7c;
@@ -307,7 +308,7 @@
 }
 
 .req-bth {
-  width: 80px;
+  width: 85px;
   border-radius: 15px;
   height: 20px;
   color: white;

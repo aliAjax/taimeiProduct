@@ -43,7 +43,7 @@ export default class ItemDetailForm extends Component {
 			responseProgress: '',
 			demandstate: '', //需求状态(0: 正常,1: 完成,2: 异常,3: 删除,4: 未处理,5: 审核不通过,6, 审核通过)
 			demandStateStr: '',
-			identifier: '',//编号
+			identifier: '--',//编号
 
 			isResponseDemand: '',//当前用户是否响应
 			isWithdrawResponse: '',
@@ -101,13 +101,12 @@ export default class ItemDetailForm extends Component {
 			defaultActiveKey: '2',//默认显示面板(默认需求详情)
 			receivedDefaultKey: '',
 			itemDetailFormLoading: true,//需求详情加载数据遮层,true:开启,false:关闭
-			loading: false,//
+			loading: false,//其他用户操作loading动画
 			showPayEarnestMoney: false,  // 支付意向金是否显示
 			payData: {},  // 向支付意向金组件传递的数据
 			demandId: '',  // 方案id
-			serIng: false,
-			visible_entrust: false,
-			visible_contract: false,
+			visible_entrust: false,//委托框隐藏
+			visible_contract: false,//账单隐藏
 		};
 	}
 	componentWillMount() {  // 将要渲染
@@ -157,15 +156,23 @@ export default class ItemDetailForm extends Component {
 		}).then((response) => {
 			if (response.data.opResult === "0") {
 				let data = response.data.obj;
+				if (data.employeeId !== store.getState().role.id && data.demandprogress == '12') {//查看市场需求,并且需求状态为审核中时关闭层,当跳过列表中的验证时到达此步
+					emitter.emit('openFrom', {
+						openFrom: false,
+					});
+				}
 				this.setState(() => {
+					// let defaultActiveKey = 
 					return {
-						...data,
-						isMarket: data.employeeId !== store.getState().role.id,
-						defaultActiveKey: this.state.defaultActiveKey || '2',
-						receivedDefaultKey: this.state.receivedDefaultKey || '',
-						itemDetailFormLoading: false,
-						visible_entrust: false,
-						loading: false,
+						...data,//将获得数据结构到state中
+						isMarket: data.employeeId !== store.getState().role.id,//是否是市场,true:市场,false:自己发布的
+						defaultActiveKey: data.demandtype == '0' || data.demandtype == '1' ? (this.state.defaultActiveKey || '2') : '2',//设置默认key
+						receivedDefaultKey: this.state.receivedDefaultKey || '',//设置方案列表默认展开
+						itemDetailFormLoading: false,//详情加载动画
+						visible_entrust: false,//隐藏委托框
+						visible_contract: false,//账单隐藏
+						showCompanyRecharge: false,//关闭充值
+						loading: false,//其他用户操作loading动画
 					}
 				}, () => {
 					// 处理数据
@@ -540,17 +547,17 @@ export default class ItemDetailForm extends Component {
 					title: '计划执行周期有误，请重新编辑后发布',
 				});
 			}
-		}else {
-		    if(!periodValidity) {
-                Modal.error({
-                    title: '请选择需求有效期',
-                });
-            }else if(!sailingtime) {
-                Modal.error({
-                    title: '计划执行周期有误，请重新编辑后发布',
-                });
-            }
-        }
+		} else {
+			if (!periodValidity) {
+				Modal.error({
+					title: '请选择需求有效期',
+				});
+			} else if (!sailingtime) {
+				Modal.error({
+					title: '计划执行周期有误，请重新编辑后发布',
+				});
+			}
+		}
 	}
 	closeMoneyFn() {  // 关闭意向金组件
 		this.setState({
@@ -759,13 +766,16 @@ export default class ItemDetailForm extends Component {
 					btn = '已拒绝';
 				}
 			} else if ((demandprogress === "4") && role == '1') {
-				btn = '订单已完成';
+				// btn = '订单已完成';
+				btn=<span style={{ cursor: 'pointer' }} onClick={this.toBill}>订单已完成</span>
 			} else if ((demandprogress === "5") && role == '1') {
 				btn = '佣金支付';
 			} else if ((demandprogress === "6") && role == '1') {
-				btn = '交易已完成';
+				// btn = '交易已完成';
+				btn=<span style={{ cursor: 'pointer' }} onClick={this.toBill}>交易已完成</span>
 			} else if (role == '0' && (demandprogress === "4" || demandprogress === "5" || demandprogress === "6")) {//航司的交易完成包括订单完成佣金支付交易完成
-				btn = '交易已完成';
+				// btn = '交易已完成';
+				btn=<span style={{ cursor: 'pointer' }} onClick={this.toBill}>交易已完成</span>
 			} else if (demandprogress === '8') {
 				btn = '已接受';
 			} else if (demandprogress === '9' && (demandtype === '3' || demandtype === '4')) {
@@ -889,6 +899,7 @@ export default class ItemDetailForm extends Component {
 			fromMes: {
 				transmit: {
 					bianjiAgain: false,
+					new: true,
 				}
 			}
 		};
@@ -1096,7 +1107,7 @@ export default class ItemDetailForm extends Component {
 
 	}
 	// 展开第一条我的提交的方案
-	toReceivedFirstItem=()=>{
+	toReceivedFirstItem = () => {
 		let {
 			processedPlanList,//收到的方案列表
 		} = this.state;
@@ -1253,7 +1264,7 @@ export default class ItemDetailForm extends Component {
 							let dtime = ctime.getTime() - rtime.getTime();
 							let days = Math.floor(dtime / (24 * 3600 * 1000))
 							let hours = Math.floor((dtime % (24 * 3600 * 1000)) / (3600 * 1000))
-							if (Number(days) < 3) {
+							if (Number(days) < 7) {
 
 								return <div className={style['tip_1']}>您的<a onClick={this.toReceivedFirstItem}>方案</a>已提交成功，请积极与需求方<a onClick={this.chatForPlan.bind(this, rpid)}>联系洽谈</a>。</div>
 
@@ -1277,6 +1288,10 @@ export default class ItemDetailForm extends Component {
 					}
 
 				} else if (demandprogress === '2') {//订单确认 
+
+					if (responseProgress == '-1') {
+						return <div>市场瞬息万变，请及时支付意向金并提交方案，把握市场先机。</div>
+					}
 
 					if (isResponseDemand == 1) {//'我'是否响应过该需求
 						let respStatus = false;//我的方案是否被选中 true:选中,false:未选中
@@ -1320,7 +1335,7 @@ export default class ItemDetailForm extends Component {
 						return '';
 					}
 
-				} else if (demandprogress === '3') {
+				} else if (demandprogress === '3') {// 需求关闭
 
 					return <div className={style['tip_1']}>未达成合作，订单失败。对该运力感兴趣的话，您也可以自己<a onClick={this.jichangPublish}>发布</a>航线需求。</div>
 
@@ -1508,6 +1523,10 @@ export default class ItemDetailForm extends Component {
 						return '';
 					}
 
+				} else if (demandprogress === '3') {// 需求关闭
+
+					return <div className={style['tip_1']}>未达成合作，订单失败。对该航线感兴趣的话，您也可以自己<a onClick={this.jichangPublish}>发布</a>运力需求。</div>
+
 				} else if (demandprogress === '6') {//交易完成
 
 					if (isResponseDemand == 1) {//'我'是否响应过该需求
@@ -1535,7 +1554,7 @@ export default class ItemDetailForm extends Component {
 								return <div className={style['tip_1']}>未达成合作，订单失败。对该航线感兴趣的话，您也可以自己<a onClick={this.jichangPublish}>发布</a>运力信息。</div>
 
 							} else if (rp == 1) {//订单确认
-								return <div className={style['tip_1']}>该航线已开通，交易已完成。您可以再<a onClick={this.jichangPublish}>发布</a>新的需求</div>
+								return <div className={style['tip_1']}>已生成订单，请及时联系对方签约，点此<a onClick={this.toBill}>查看订单协议</a></div>
 							} else {
 								return '';
 							}
@@ -1559,7 +1578,9 @@ export default class ItemDetailForm extends Component {
 			} else if (demandprogress === '8') {
 				return <div className={style['tip_1']}>太棒了！您的托管已接受！专属客服经理会与您联系。您可以<a onClick={this.jichangPublish}>发布</a>新的需求</div>
 			} else if (demandprogress === '10') {
-				return <div className={style['tip_1']}>市场条件暂时无法满足您的托管需求！航线托管失败。您可以提高报价或调整思路重新<a onClick={this.jichangPublish}>发布</a></div>
+                let { id } = this.state;
+                let role = store.getState().role.role;
+				return <div className={style['tip_1']}>市场条件暂时无法满足您的托管需求！航线托管失败。您可以提高报价或调整思路重新<a onClick={this.demandBackOn.bind(this, id, role)}>发布</a></div>
 			} else {
 				return '';
 			}
@@ -1568,20 +1589,20 @@ export default class ItemDetailForm extends Component {
 			if (demandprogress === '7') {
 				return <div className={style['tip_1']}>您的航线委托平台已收到，正在为您安排专属客服经理，请您稍等！<a onClick={this.lianxiKefu.bind(this)}>联系客服</a></div>
 			} else if (demandprogress === '9') {
-				return <div className={style['tip_1']}>正在为您全面评测该航线，请您耐心等待！预计3个工作日。<a onClick={this.lianxiKefu.bind(this)}>联系客服</a></div>
+				return <div className={style['tip_1']}>正在为您全面评测航线需求，量身打造航线方案，请您耐心等待！预计3个工作日<a onClick={this.lianxiKefu.bind(this)}>联系客服</a></div>
 			} else if (demandprogress === '6') {
 				return <div className={style['tip_1']}>太棒了！您的委托已完成！专属客服经理会与您联系。您可以<a onClick={this.jichangPublish}>发布</a>新的需求</div>
 			} else if (demandprogress === '10') {
-				return <div className={style['tip_1']}>暂无市场条件满足您的委托需求！航线委托失败。您可以调整思路重新<a onClick={this.jichangPublish}>发布</a></div>
+				return <div className={style['tip_1']}>暂无市场条件满足您的委托需求！航线委托失败。您可以调整思路重新<a onClick={this.demandBackOn}>发布</a></div>
 			} else {
 				return '';
 			}
 		} else if (demandtype === '4') {//运力委托
-			if (demandprogress === '7') {
+			if (demandprogress === '7') {//待处理
 				return <div className={style['tip_1']}>您的运力委托平台已收到，正在为您安排专属客服经理，请您稍等！<a onClick={this.lianxiKefu.bind(this)}>联系客服</a></div>
-			} else if (demandprogress === '9') {
+			} else if (demandprogress === '9') {//处理中
 				return <div className={style['tip_1']}>正在为您全面评测运力情况，量身打造航线方案，请您耐心等待！预计3个工作日。<a onClick={this.lianxiKefu.bind(this)}>联系客服</a></div>
-			} else if (demandprogress === '6') {
+			} else if (demandprogress === '6') {//交易完成
 				return <div className={style['tip_1']}>太棒了！您的委托已完成！专属客服经理会与您联系。您可以<a onClick={this.jichangPublish}>发布</a>新的需求</div>
 			} else if (demandprogress === '10') {//拒绝
 				return <div className={style['tip_1']}>暂无市场条件满足您的委托需求！航线委托失败。您可以调整思路重新<a onClick={this.jichangPublish}>发布</a></div>
@@ -1602,7 +1623,12 @@ export default class ItemDetailForm extends Component {
 		} else {
 			type = isMarket ? 3 : 4;
 		}
-		tab1 = <Received isMarket={isMarket} role={role} demandId={id} demandprogress={demandprogress} planList={processedPlanList} updateDetail={this.updateDetail} defaultActiveKey={this.state.receivedDefaultKey} upPanelKey={this.upPanelKey} />;
+		try {
+			
+			tab1 = <Received isMarket={isMarket} role={role} demandId={id} demandprogress={demandprogress} planList={processedPlanList} updateDetail={this.updateDetail} defaultActiveKey={this.state.receivedDefaultKey} upPanelKey={this.upPanelKey} />;
+		} catch (error) {
+			console.log(error)
+		}
 		tab2 = (
 			<div style={{ height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 				<Plan isMarket={isMarket} role={role} demandPlans={processedDemandPlans} />
@@ -1953,6 +1979,13 @@ export default class ItemDetailForm extends Component {
 			}
 		}
 	}
+	identifierFun = () => {
+		let { demandprogress } = this.state;
+		if (demandprogress === '4' || demandprogress === '5' || demandprogress === '6' || demandprogress === '8') {
+			return '订单';
+		}
+		return '需求'
+	}
 	onTabClick = (key) => {
 		this.setState({
 			defaultActiveKey: key,
@@ -1991,6 +2024,41 @@ export default class ItemDetailForm extends Component {
 				{/* <HeaderInfo headerTitle={this.state.headerTitle} /> */}
 				<div className={style['detail-top-info']}>
 					<div className={style['detail-top-info-item']}>
+						<span>发布时间</span>
+						<span>
+							{this.state.releasetime}
+						</span>
+					</div>
+					<div className={`${style['detail-top-info-item']} ${style['item-hide']}`}>
+						<span>状态:</span>
+						<span>
+							{this.getDemandprogressStr()}
+						</span>
+					</div>
+					<div className={`${style['detail-top-info-item']} ${style['item-hide']}`}>
+						<i className={'iconfont'}>&#xe64c;</i>
+						<span>浏览量</span>
+						<span className={style['num-color']}>
+							{this.state.browsingVolume}
+						</span>
+					</div>
+					<div className={`${style['detail-top-info-item']} ${style['item-hide']}`}>
+						<i className={'iconfont'}>&#xe6e7;</i>
+						<span>响应方案</span>
+						<span className={style['num-color']}>
+							{this.state.recivedResponseCount}
+						</span>
+					</div>
+					<div className={`${style['detail-top-info-item']} ${style['identifier-visible']}`}>
+						<span>{this.identifierFun()}编号: </span>
+						<span>
+							{this.state.identifier}
+						</span>
+					</div>
+					<div className={style['close-btn']} onClick={this.closeItemDetailForm}>
+						<i className={'iconfont'}>&#xe62c;</i>
+					</div>
+					{/* <div className={style['detail-top-info-item']}>
 						<div>
 							<span>发布时间</span>
 							<span>
@@ -2022,7 +2090,7 @@ export default class ItemDetailForm extends Component {
 						<div className={style['close-btn']} onClick={this.closeItemDetailForm}>
 							<i className={'iconfont'}>&#xe62c;</i>
 						</div>
-					</div>
+					</div> */}
 				</div>
 				<div className={style['main-detail-info']} ref={'main'}>
 					<div className={style['detail-title-con']}>
@@ -2050,6 +2118,9 @@ export default class ItemDetailForm extends Component {
 					<div style={{ height: '50px' }}>
 						{this.chatFun()}
 					</div>
+				</div>
+				<div className={`${style['identifier']} ${style['identifier2-visible']}`}>
+					{this.identifierFun()}编号: {this.state.identifier}
 				</div>
 				<Confirmations
 					title={'一键委托'} subTitle={`确认将此${this.state.role === '1' ? '航线' : '运力'}需求委托给平台处理，委托后将生成新的${this.state.role === '1' ? '航线' : '运力'}委托，此需求将关闭。`} tipText={''}

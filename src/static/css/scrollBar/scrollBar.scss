@@ -47,6 +47,9 @@
     margin-right: 8px;
   }
 }
-.li{
-
+/*1366适配*/
+@media screen and (max-width: 1366px) {
+  .box{
+    bottom: 114px;
+  }
 }

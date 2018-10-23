@@ -69,8 +69,9 @@ class MapMethods {
                 offset = new BMap.Size(-26,-52);
                 let style = "";
                 if(val.label.isBc){
-                    offset = new BMap.Size(-6,-33);
-                    style = "padding-top:4px"
+                    // offset = new BMap.Size(-6,-33);
+                    // style = "color:red"
+                    style = "padding-top:29px;"
                 }
                 mes = `
                     <div class="map-demand-cutline-mes">
@@ -78,7 +79,8 @@ class MapMethods {
                     </div>
                 `
             };
-            let sl = val.label.isBc ? "width: 44px;height: 28px;" : "width: 100%;height: 100%;";
+            let sl = "width: 100%;height: 100%;";
+            // let sl = val.label.isBc ? "width: 44px;height: 28px;" : "width: 100%;height: 100%;";
             let node = `<div class=${cls === 0 ? "map-demand-pao" : "map-demand-cutline"}>
                             <img class="map-demand-scale" style="${sl}" src='${val.symbol.split("image://")[1]}'/> 
                             ${mes}

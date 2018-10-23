@@ -43,6 +43,14 @@ export default class DealPwd extends Component {
             pwdValue: e.target.value,
         })
     }
+    onKeyDownFn(e) {
+        if(e.keyCode === 13 && !this.state.noMsgQueren) {  // 按下Enter键
+            this.sendDataFn();
+        }
+        if(e.keyCode === 37 || e.keyCode === 39) {  // 阻止左右箭头移动焦点
+            e.preventDefault();
+        }
+    }
     sendDataFn() {
         this.setState({
             noMsgQueren: true
@@ -61,15 +69,16 @@ export default class DealPwd extends Component {
                     'Content-type': 'application/json;charset=utf-8'
                 }
             }).then((response)=>{
-                try{
-                    if(response.data.opResult == 0) {
+                try {
+                    if (response.data.opResult == 0) {
                         this.props.close(1);  // 1:验证成功-关闭，2：点击“取消”关闭
-                    }else {
-                        this.error(response.data.msg);
+                    } else {
+                        this.setState({
+                            noMsgQueren: false,
+                        },() => {
+                            this.error(response.data.msg);
+                        })
                     }
-                    this.setState({
-                        noMsgQueren: false,
-                    })
                 }catch(e) {
 
                 }
@@ -175,6 +184,7 @@ export default class DealPwd extends Component {
                        disabled={this.state.isLocked}
                        onBlur={()=>{setTimeout(()=>{_this.ulClickFn()}, 0)}}
                        style={{position: 'absolute', top: '-9999px'}}
+                       onKeyDown={this.onKeyDownFn.bind(this)}
                        onChange={this.inputChangeFn.bind(this)}/>
                 <div className={styles['container']}>
                     <div>交易密码</div>

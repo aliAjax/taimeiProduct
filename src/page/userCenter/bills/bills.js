@@ -2,7 +2,9 @@
 /* eslint-disable */
 import React, { Component, Fragment } from 'react';
 import Contract from '../../../components/Contract/contract';
-import { Menu, Dropdown, Icon, Pagination, Button, Modal, message, Spin } from 'antd';
+import Btn from "../../../components/button/btn";
+import IconInfo from '../../../components/IconInfo/IconInfo';
+import { Menu, Dropdown, Icon, Pagination, Button, Modal, message, Spin,Checkbox,Row,Col } from 'antd';
 import { host as $host } from "./../../../utils/port";
 import { store } from "../../../store/index";
 import Axios from "./../../../utils/axiosInterceptors";
@@ -13,6 +15,8 @@ import emitter from "../../../utils/events";
 export default class Bills extends Component {
     constructor(props) {
         super(props);
+		this.closeFinancing=this.closeFinancing.bind(this);
+		this.applyFor=this.applyFor.bind(this);
         this.state = {
             showSpin: true,
             accountsDueTotal: "",//"应收应付合计金额",
@@ -41,7 +45,8 @@ export default class Bills extends Component {
             demandId: "",//需求ID
             total: 0,
             status: [
-                { key: 2, name: "全部" },
+                { key: 8, name: "全部" },
+                { key: 2, name: "已融资" },
                 { key: 1, name: "未结清" },
                 { key: 0, name: "已结清" },
             ],
@@ -74,6 +79,12 @@ export default class Bills extends Component {
                 remark: "",
                 airCrftTyp: "",
             },//合同数据列表
+			financingType:false,//是否显示融资需求弹层 false:不显示
+            arrFinancing:[],//融资测试数据
+            idList:[],//融资数据集合
+			checkedValues:[],//已选融资数据
+			isDisable:false,//融资提交申请按钮是否禁点
+			checked:false,//全选按钮 false:未选
         }
     }
 
@@ -86,16 +97,21 @@ export default class Bills extends Component {
         //判断角色类型
         emitter.emit("openFrom", { openFrom: false, fromType: "" });
         let role = store.getState().role.role;
-        let demandTypeList = this.state.demandTypeList;
+        let {status,demandTypeList} = this.state;
         let initData = this.state.initData;
         let shouldDoName;
-        if (role == 0) {
+        if (role == 0) {//0 航司
             demandTypeList = [
                 { key: 5, name: "全部" },
                 { key: 0, name: "航线需求" },
                 { key: 1, name: "运力投放" },
                 // {key:4,name:"委托运力需求"}
             ];
+			status= [
+				{ key: 8, name: "全部" },
+				{ key: 1, name: "未结清" },
+				{ key: 0, name: "已结清" },
+			],
             shouldDoName = "收";
         } else {
             demandTypeList = [
@@ -107,7 +123,9 @@ export default class Bills extends Component {
             shouldDoName = "付";
         };
         this.setState({
+			checkedValues:[],
             role,
+			status,
             demandTypeList,
             shouldDoName,
             id:demandData[1]
@@ -156,6 +174,13 @@ export default class Bills extends Component {
                     showSpin: false
                 })
             }
+        });
+        let arrTest=[];
+		for(let i=0;i<10;i++){
+			arrTest.push(toString(i));
+		};
+        this.setState({
+            arrTest
         })
     }
 
@@ -368,9 +393,12 @@ export default class Bills extends Component {
     changeStatus(num) {
         let statusName;
         switch (num) {
-            case "2":
+            case "8":
                 statusName = "全部";
                 num = "";
+                break;
+            case "2":
+                statusName = "已融资";
                 break;
             case "1":
                 statusName = "未结清";
@@ -433,6 +461,129 @@ export default class Bills extends Component {
         })
     }
 
+	financing(){
+		Axios({
+			method: 'get',
+			url:"/findCanApplicationFinancing",
+			headers: {
+				'Content-type': 'application/json; charset=utf-8'
+			}
+		}).then((response) => {
+			if(response.data.opResult==0){
+			    let idList=[];
+			    let list=response.data.list
+			    for(let i=0;i<list.length;i++){
+			        idList.push(list[i].id)
+			    } ;
+			    this.setState({
+                    idList,
+					arrFinancing:response.data.list,
+					financingType:true
+                })
+            }else {
+				this.setState({
+					arrFinancing:[],
+					financingType:true
+				})
+            }
+		});
+    }
+
+	closeFinancing(){
+		this.setState({
+			checkedValues:[],
+			financingType:false
+		})
+    }
+
+    //选择融资条目
+	checkSingle(checkedValues){
+        this.setState({
+			checkedValues
+        })
+    }
+
+    //融资全选
+	checkAllList(e){
+    	let checked=e.target.checked;
+        let {checkedValues,idList}=this.state;
+        if(checked){
+            checkedValues=idList;
+        }else {
+            checkedValues=[];
+        };
+        this.setState({
+			checked,
+            checkedValues
+        })
+    }
+
+    //提交融资申请
+	applyFor(){
+        let _this=this;
+    	if(this.state.checkedValues.length==0){
+			Modal.error({
+				title: '信息提示：',
+				content: '未选择融资航线，请选择后再提交申请',
+				className: "test",
+				onOk() {
+					_this.setState({
+						isDisable:false
+					})
+				},
+			});
+		}else {
+			let demand=this.state.checkedValues.join(",");
+			Axios({
+				method: 'post',
+				url:"/applicationFinancingByOrder",
+				data: demand,
+				dataType: 'json',
+				headers: {
+					'Content-type': 'application/json; charset=utf-8'
+				}
+			}).then((response) => {
+				if (response.data.opResult == "0") {
+					Modal.success({
+						title: '信息提示：',
+						content: '融资申请提交成功，可在申请记录中查看',
+						onOk() {
+							emitter.emit("financing");
+							_this.setState({
+								financingType:false
+							})
+						},
+						className: "test"
+					});
+				} else {
+					Modal.error({
+						title: '信息提示：',
+						content: '融资申请失败' + "," + response.data.msg,
+						className: "test",
+						onOk() {
+							_this.setState({
+								isDisable:false
+							})
+						},
+					});
+				}
+			})
+		}
+
+	};
+
+    //融资列表点击标题打开需求详情
+	openDemandById(id){
+	    window.screen.width>1366?"":this.refs.listBox.style.marginLeft="28px";
+	    emitter.addEventListener("changeBoxLocation",()=>{
+			this.refs.listBox.style.marginLeft="283px";
+        });
+		this.setState({
+			tableType:true,
+            id
+        })
+    }
+    
     render() {
         //需求类型下拉
         let _this = this;
@@ -498,8 +649,72 @@ export default class Bills extends Component {
         } else if (this.state.noDataType) {
             noPagin = style['noPagin'];
         };
+        let timerA=false;
+        let timerB=false;
         return (
             <div className={`scroll ${style['box']}`}>
+                { this.state.financingType &&
+                    <div className={style["checkBox"]}>
+                        <div ref={"listBox"} className={style['financingBox']}>
+                            <div className={style['rectangle']}>
+                                <div className={style['checkTitle']}>
+                                    选择你需要融资的需求
+                                </div>
+                                <div>
+                                    <span className={`iconfont ${style['closeBtn']}`} onClick={this.closeFinancing}>&#xe666;</span>
+                                </div>
+                            </div>
+                            <div className={style['checkCtn']}>
+                                <div className={style['checkCtnBox']}>
+                                    <div className={style['checkDiv']}>
+                                        <Checkbox checked={this.state.checked} onChange={this.checkAllList.bind(this)}>全选</Checkbox>
+                                    </div>
+                                    <div className={style['checkSpan1']}>
+                                        账单更新时间
+                                    </div>
+                                    <div className={style['checkSpan2']}>
+                                        需求类型
+                                    </div>
+                                    <div className={style['checkSpan3']}>
+                                        发布标题
+                                    </div>
+                                </div>
+                            </div>
+                            <div className={style["checkList"]}>
+								<Checkbox.Group value={this.state.checkedValues} style={{ width: '100%' }} onChange={this.checkSingle.bind(this)}>
+                                    {
+                                        this.state.arrFinancing.map((item,index)=>{
+                                            return (<div key={index}>
+                                                        <div className={style['checkDiv']}>
+                                                            <Checkbox value={item.id}></Checkbox>
+                                                        </div>
+                                                        <div className={style['checkSpan1']}>
+                                                            {item.afterFormatDate}
+                                                        </div>
+                                                        <div className={style['checkSpan2']}>
+															{item.demandTypeStr}
+                                                        </div>
+                                                        <div onClick={this.openDemandById.bind(this,item.id)} className={style['checkSpan3']}>
+                                                            {item.title}
+                                                        </div>
+                                                    </div>
+                                            )
+                                        })
+                                    }
+                                </Checkbox.Group>
+                            </div>
+                            <div className={style['checkBtn']}>
+                                <Btn text='提交申请' otherText="申请中" btnType="1" isDisable={this.state.isDisable} styleJson={{ width: "192px" ,height:"30px",padding:0}} onClick={function () {//防止连续点击
+                                    clearTimeout(timerA);
+                                    timerA = setTimeout(function () {
+                                        _this.applyFor()
+                                    }, 300)
+                                }} />
+                                <Btn text='取消' otherText="取消中" btnType="0" styleJson={{ width: "100px" ,height:"30px",padding:0,marginLeft:"24px"}} onClick={this.closeFinancing}/>
+                            </div>
+                        </div>
+                    </div>
+                }
                 {/*downType:在合同数据请求成功后设置能下载 showID：合同id  closeDetail:关闭合同事件   contractList:接口请求返回的合同数据  */}
                 { this.state.tableType&&
                     <Contract
@@ -518,6 +733,14 @@ export default class Bills extends Component {
                         <div className={style['showMoneyTitle']}>未{this.state.shouldDoName}合计金额(元)</div>
                         <div className={style['moneyNum']}>{willBillNum}</div>
                     </div>
+                    {
+						store.getState().role.role==1?<div className={style['financing']}>
+							<Btn text='融资申请' otherText="查询中" btnType="1" styleJson={{ width: "100px" ,height:"30px",padding:0}} onClick={
+								this.financing.bind(this)
+							} />
+							<IconInfo title={"您可对已开航的账单进行融资申请，申请通过后由平台提供垫资、融资服务，更好的保障航线运营工作"}/>
+						</div>:""
+                    }
                 </div>
                 <div className={style['status-title']}>
                     <div className={style['billTime']}>账单更新时间</div>
@@ -538,7 +761,7 @@ export default class Bills extends Component {
                         </Dropdown>
                     </div>
                 </div>
-                <div style={{ maxHeight: 560, overflowX: "hidden", overflowY: "scroll" }}>
+                <div style={{ maxHeight: 560, overflowX: "hidden", overflowY: "auto" }}>
                     {
                         this.state.initData.map((item, index) => {
                             return <BillsBox key={index} tableType={this.state.tableType} showDetailType={this.state.showDetailsList[index].type} detailsId={this.state.showDetailsList[index].id} data={item} role={this.state.role} showDetailEvent={(data, id) => this.showDetailEvent(data, id)}

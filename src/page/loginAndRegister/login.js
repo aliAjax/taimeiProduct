@@ -76,7 +76,7 @@ export default class Login extends Component{
                     if(localStorage.getItem("remember") === 'true'){
                         localStorage.setItem("saveMes",JSON.stringify({username:this.state.username,password:this.state.password}));
                     }else{
-                        localStorage.clear("saveMes");
+                        localStorage.removeItem("saveMes");
                     };
                     store.dispatch(an('ROLE',response.data.obj));
                 }else{

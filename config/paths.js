@@ -41,7 +41,7 @@ function getServedPath(appPackageJson) {
 // config after eject: we're in ./config/
 module.exports = {
   dotenv: resolveApp('.env'),
-  appBuild: resolveApp('E:\\workspace2\\hangyu_second\\src\\main\\webapp\\static'),
+  appBuild: resolveApp('E:\\gitWorkSpace\\hangyuJava\\src\\main\\webapp\\static'),
   appPublic: resolveApp('public'),
   appHtml: resolveApp('src/index.html'),
   appIndexJs: resolveApp('src/index.js'),

@@ -346,7 +346,7 @@ export default class Maps extends Component{
                 });
                 this.code = code;
                 if(code === ""){return};
-                let rs = [],curveStyle = { strokeWeight:1, strokeOpacity:1};//strokeColor:"#a5baff"
+                let rs = [],curveStyle = { strokeWeight:1.4, strokeOpacity:1};//strokeColor:"#a5baff"
                 let resList = rs.map((data)=>{
                     return data.mes.iata;
                 });

@@ -1,5 +1,5 @@
 // author:wangli time:2018-06-05 content:个人中心-账单-单条数据
-import React, { Component } from "react";
+import React, { Component,Fragment } from "react";
 import style from "../../static/css/bills/billsComponent/billsItems.scss";
 import { Icon } from "antd";
 
@@ -11,11 +11,15 @@ export default class BillsItem extends Component {
 
     //点击显示账单详情事件
     changeDirection() {
-        //双击同一个账单关闭下拉框
-        let showDetailType = this.props.showDetailType;
-        showDetailType = !showDetailType;
-        //向父组件返回是否显示合同和合同id
-        this.props.showDetailEvent(showDetailType, this.props.detailsId);
+        if(this.props.data.billState=="2"){
+
+        }else {
+			//双击同一个账单关闭下拉框
+			let showDetailType = this.props.showDetailType;
+			showDetailType = !showDetailType;
+			//向父组件返回是否显示合同和合同id
+			this.props.showDetailEvent(showDetailType, this.props.detailsId);
+        }
     }
 
     //点击显示需求详情事件
@@ -61,6 +65,9 @@ export default class BillsItem extends Component {
             case "0":
                 billText = "已结清";
                 break;
+            case "2":
+                billText = "已融资";
+                break;
             default:
                 billText = "-";
                 break;
@@ -92,7 +99,9 @@ export default class BillsItem extends Component {
                 <div className={style['title']}><span onClick={(e) => this.detail(e)}>{data.title}</span></div>
                 <div className={style['pay']}>{billNum}</div>
                 <div className={style['state']}>{billText}</div>
-                <div className={style['showMore']} >查看详情{showIcon}</div>
+                <div className={style['showMore']} >{
+                    this.props.data.billState==2 ? "" : <Fragment>查看详情{showIcon}</Fragment>
+                }</div>
             </div>
         )
     }

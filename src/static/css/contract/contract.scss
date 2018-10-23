@@ -225,3 +225,11 @@
     }
   }
 }
+/*1366适配*/
+@media screen and (max-width: 1366px) {
+  .detailBox{
+    overflow-y: scroll;
+    top: 50px !important;
+    padding-bottom: 100px;
+  }
+}

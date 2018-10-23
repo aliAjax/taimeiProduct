@@ -462,7 +462,8 @@ input {
                     }
                     &.reverse {
                         >span {
-                            transform: rotateY(180deg)
+                            transform: rotateY(180deg);
+                            color: #ceac30;
                         }
                     }
                 }
@@ -522,7 +523,8 @@ input {
                 }
                 &.reverse {
                     >span {
-                        transform: rotateY(180deg)
+                        transform: rotateY(180deg);
+                        color: #ceac30;
                     }
                 }
             }
@@ -641,7 +643,6 @@ input {
                 width: 16px;
                 height: 16px;
                 border-radius: 50%;
-                background-color: #4172f4;
                 color: #fff;
                 font-size: 10px;
                 margin-right: 5px;
@@ -652,6 +653,12 @@ input {
         }
         .bgColorYellow {
             background-color: #ceac30
+        }
+        .ident {
+            position: absolute;
+            left: -1.2rem;
+            width: 1.2rem;
+            word-break: break-all;
         }
     }
     .drop-list-time {
@@ -711,32 +718,8 @@ input {
     height: 760px;
 }
 
-@media screen and(max-width: 1366px) {
+@media screen and (max-width: 1366px) {
     .new-demand-screen-change {
         height: 650px;
-    }
-    .airline-need {
-        width: 680px;
-        .ninth {
-            width: 680px;
-        }
-    }
-    .screen-change-target {
-        width: 175px;
-    }
-    .screen-change-target2 {
-        width: 120px;
-    }
-    .text-area {
-        width: 555px;
-    }
-    .row-border {
-        width: 555px;
-    }
-    .buttons {
-        width: 680px;
-    }
-    .border1 {
-        margin: 0 18px;
     }
 }

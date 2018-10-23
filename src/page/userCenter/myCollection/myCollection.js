@@ -49,6 +49,7 @@ export default class MyRelease extends Component{
 
     releaseTimeClickFn() {  // 点击发布时间
         this.state.releaseTime = this.state.releaseTime === 'Desc' ? 'Asc' : 'Desc';  // 时间排序 两个值”Desc”:降序，”Asc”:升序，不传为降序
+        this.state.page = 1;
         this.reqData();
     }
     demandProgressClickFn({key}) {  // 点击状态

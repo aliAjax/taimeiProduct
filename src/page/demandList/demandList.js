@@ -32,9 +32,10 @@ export default class DemandList extends Component {
         }
     }
     initBox = data => {
+        let pcH = document.body.clientWidth <= 1366 ? 50 :65;
         this.setState({
             style: {
-                height: `${document.body.clientHeight - 65}px`
+                height: `${document.body.clientHeight - pcH}px`
             }
         });
     };
@@ -153,10 +154,10 @@ export default class DemandList extends Component {
                         </div>
                         <ul className={style['match-box']}>
                             <li>
-                                <Checkbox checked={this.state.mac} onChange={this.andIMatching.bind(this, 0)} className='cover-ant-checkbox-wrapper'>只看与我匹配的</Checkbox>
+                                <Checkbox checked={this.state.mac} onChange={this.andIMatching.bind(this, 0)} className='cover-ant-checkbox-wrapper'>与我匹配的</Checkbox>
                             </li>
                             <li>
-                                <Checkbox checked={this.state.res} onChange={this.andIMatching.bind(this, 1)} className='cover-ant-checkbox-wrapper'>我响应过的需求</Checkbox>
+                                <Checkbox checked={this.state.res} onChange={this.andIMatching.bind(this, 1)} className='cover-ant-checkbox-wrapper'>响应过的需求</Checkbox>
                             </li>
                         </ul>
                     </div>

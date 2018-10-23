@@ -286,7 +286,7 @@ module.exports = {
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
       inject: true,
-    version_numbe:"<script>var version_numbe = ''</script>",
+    version_numbe:"<script>var version_numbe = '';var measure_url = ''</script>",
       template: paths.appHtml,
     }),
     // Add module names to factory functions so they appear in browser profiler.

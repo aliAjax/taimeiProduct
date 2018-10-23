@@ -466,7 +466,7 @@ export default class AirportInfo extends Component {
                                 <ul className={style['sidebar-list']}>
                                     <li className={this.state.step == 1 ? style['active'] : ''} onClick={this.scrollTo.bind(this, '1')}>
                                         <span className={`${style['point']} ${this.state.step =='1' ? style['display-none'] : ''}`}></span>
-                                        <span className={`iconfont ${style['iconfont']}`}>&#xe627;</span>机场位置
+                                        <span className={`iconfont ${style['iconfont']}`}>&#xe627;</span>基本信息
                                     </li>
                                     <li className={this.state.step == 2 ? style['active'] : ''} onClick={this.scrollTo.bind(this, '2')}>
                                         <span className={`${style['point']} ${this.state.step =='2' ? style['display-none'] : ''}`}></span>

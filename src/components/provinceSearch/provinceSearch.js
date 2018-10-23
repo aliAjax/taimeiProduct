@@ -10,37 +10,37 @@ export default class ProvinceSearch extends Component {
             newList: [],//显示的下拉列表
             searchText: "",//正则匹配条件
             provinceList: [//省份数据
-                { name: "北京市", eName: "bjs", spell: "beijingshi" },
-                { name: "天津市", eName: "tjs", spell: "tianjinshi" },
-                { name: "河北省", eName: "hbs", spell: "heibeisheng" },
-                { name: "山西省", eName: "sxs", spell: "shanxisheng" },
-                { name: "内蒙古", eName: "nmg", spell: "neimenggu" },
-                { name: "辽宁省", eName: "lns", spell: "liaoningsheng" },
-                { name: "吉林省", eName: "jls", spell: "jilinsheng" },
-                { name: "黑龙江省", eName: "hljs", spell: "heilongjiangsheng" },
-                { name: "上海市", eName: "shs", spell: "shanghaishi" },
-                { name: "江苏省", eName: "jss", spell: "jiansusheng" },
-                { name: "浙江省", eName: "zjs", spell: "zhejiangsheng" },
-                { name: "安徽省", eName: "ahs", spell: "anhuisheng" },
-                { name: "福建省", eName: "fjs", spell: "fujiansheng" },
-                { name: "江西省", eName: "jxs", spell: "jiangxisheng" },
-                { name: "山东省", eName: "sds", spell: "shandongsheng" },
-                { name: "河南省", eName: "hns", spell: "henansheng" },
-                { name: "湖北省", eName: "hbs", spell: "hubeisheng" },
-                { name: "湖南省", eName: "hns", spell: "hunansheng" },
-                { name: "广东省", eName: "gds", spell: "guangdongsheng" },
-                { name: "广西", eName: "jx", spell: "jiangxi" },
-                { name: "海南省", eName: "hns", spell: "hainansheng" },
-                { name: "重庆市", eName: "cqs", spell: "chongqingshi" },
-                { name: "四川省", eName: "scs", spell: "sichuansheng" },
-                { name: "贵州省", eName: "gzs", spell: "guizhousheng" },
-                { name: "云南省", eName: "yns", spell: "yunnansheng" },
-                { name: "西藏", eName: "xz", spell: "xizang" },
-                { name: "陕西省", eName: "sxs", spell: "shanxisheng" },
-                { name: "甘肃省", eName: "gss", spell: "gansusheng" },
-                { name: "青海省", eName: "qhs", spell: "qinghaisheng" },
-                { name: "宁夏", eName: "nxs", spell: "ningxiasheng" },
-                { name: "新疆", eName: "xj", spell: "xinjiang" },//以上是省份
+                // { name: "北京市", spell: "bjs", eName: "beijingshi" },
+                // { name: "天津市", spell: "tjs", eName: "tianjinshi" },
+                // { name: "河北省", spell: "hbs", eName: "heibeisheng" },
+                // { name: "山西省", spell: "sxs", eName: "shanxisheng" },
+                // { name: "内蒙古", spell: "nmg", eName: "neimenggu" },
+                // { name: "辽宁省", spell: "lns", eName: "liaoningsheng" },
+                // { name: "吉林省", spell: "jls", eName: "jilinsheng" },
+                // { name: "黑龙江省", spell: "hljs", eName: "heilongjiangsheng" },
+                // { name: "上海市", spell: "shs", eName: "shanghaishi" },
+                // { name: "江苏省", spell: "jss", eName: "jiansusheng" },
+                // { name: "浙江省", spell: "zjs", eName: "zhejiangsheng" },
+                // { name: "安徽省", spell: "ahs", eName: "anhuisheng" },
+                // { name: "福建省", spell: "fjs", eName: "fujiansheng" },
+                // { name: "江西省", spell: "jxs", eName: "jiangxisheng" },
+                // { name: "山东省", spell: "sds", eName: "shandongsheng" },
+                // { name: "河南省", spell: "hns", eName: "henansheng" },
+                // { name: "湖北省", spell: "hbs", eName: "hubeisheng" },
+                // { name: "湖南省", spell: "hns", eName: "hunansheng" },
+                // { name: "广东省", spell: "gds", eName: "guangdongsheng" },
+                // { name: "广西", spell: "jx", eName: "jiangxi" },
+                // { name: "海南省", spell: "hns", eName: "hainansheng" },
+                // { name: "重庆市", spell: "cqs", eName: "chongqingshi" },
+                // { name: "四川省", spell: "scs", eName: "sichuansheng" },
+                // { name: "贵州省", spell: "gzs", eName: "guizhousheng" },
+                // { name: "云南省", spell: "yns", eName: "yunnansheng" },
+                // { name: "西藏", spell: "xz", eName: "xizang" },
+                // { name: "陕西省", spell: "sxs", eName: "shanxisheng" },
+                // { name: "甘肃省", spell: "gss", eName: "gansusheng" },
+                // { name: "青海省", spell: "qhs", eName: "qinghaisheng" },
+                // { name: "宁夏", spell: "nxs", eName: "ningxiasheng" },
+                // { name: "新疆", spell: "xj", eName: "xinjiang" },//以上是省份
             ]
         }
     }
@@ -57,11 +57,11 @@ export default class ProvinceSearch extends Component {
                 if (provinceReg.test(provinceList[i].name)) {
                     regType = "";
                     newList.push(provinceList[i])
-                } else if (provinceReg.test(provinceList[i].eName)) {
-                    regType = "eName";
-                    newList.push(provinceList[i])
                 } else if (provinceReg.test(provinceList[i].spell)) {
                     regType = "spell";
+                    newList.push(provinceList[i])
+                } else if (provinceReg.test(provinceList[i].eName)) {
+                    regType = "eName";
                     newList.push(provinceList[i])
                 }
             };
@@ -74,7 +74,7 @@ export default class ProvinceSearch extends Component {
     }
 
     componentWillMount() {
-        let provinceList = this.state.provinceList;
+        let provinceList = this.props.allProvinceList;
         let searchText = this.props.searchText;
         let newList = [];
         let regType = this.state.regType;
@@ -85,11 +85,11 @@ export default class ProvinceSearch extends Component {
                 if (provinceReg.test(provinceList[i].name)) {
                     regType = "";
                     newList.push(provinceList[i])
-                } else if (provinceReg.test(provinceList[i].eName)) {
-                    regType = "eName";
-                    newList.push(provinceList[i])
                 } else if (provinceReg.test(provinceList[i].spell)) {
                     regType = "spell";
+                    newList.push(provinceList[i])
+                } else if (provinceReg.test(provinceList[i].eName)) {
+                    regType = "eName";
                     newList.push(provinceList[i])
                 }
             };
@@ -97,7 +97,8 @@ export default class ProvinceSearch extends Component {
         this.setState({
             newList,
             regType,
-            searchText
+            searchText,
+            provinceList
         })
     }
 
@@ -114,27 +115,27 @@ export default class ProvinceSearch extends Component {
     render() {
         let newList = this.state.newList;
         let regType = this.state.regType;
-        let spellStyle, eNameStyle;
-        if (regType == "eName") {
+        let eNameStyle, spellStyle;
+        if (regType == "spell") {//spell 是简拼
+            eNameStyle = style['noShow']
+        } else if (regType == "eName") {
             spellStyle = style['noShow']
-        } else if (regType == "spell") {
-            eNameStyle = style['noShow']
         } else {
-            spellStyle = style['noShow'];
-            eNameStyle = style['noShow']
+            eNameStyle = style['noShow'];
+            spellStyle = style['noShow']
         };
         return (
             <div className="scroll" style={this.props.axis}>
                 {
                     newList.map((item, index) => {
                         let styleSpan = "style='color: #3c78ff'";
-                        let spell = item.spell.replace(this.state.searchText, "<span " + styleSpan + ">" + this.state.searchText + "</span>");
                         let eName = item.eName.replace(this.state.searchText, "<span " + styleSpan + ">" + this.state.searchText + "</span>");
+                        let spell = item.spell.replace(this.state.searchText, "<span " + styleSpan + ">" + this.state.searchText + "</span>");
                         return (
                             <div className={style['indexBox']} key={index} onClick={this.click.bind(this, item.name)}>
                                 <div>{item.name}</div>
-                                <div className={spellStyle} dangerouslySetInnerHTML={{ __html: spell }}></div>
-                                <div className={eNameStyle} dangerouslySetInnerHTML={{ __html: eName }}></div>
+                                <div className={`${eNameStyle} ${style["last"]}`} dangerouslySetInnerHTML={{ __html: eName }}></div>
+                                <div className={`${spellStyle} ${style["last"]}`} dangerouslySetInnerHTML={{ __html: spell }}></div>
                             </div>
                         )
                     })

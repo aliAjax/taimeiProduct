@@ -1,8 +1,10 @@
+/* eslint-disable */
 import {Switch,Route,HashRouter as Router ,Redirect} from 'react-router-dom';
 import {store} from './../../store/index';
 import {assemblyAction as an} from './../../utils/assemblyAction';
-
+import Axios from './../../utils/axiosInterceptors';
 import TimeDistribution from "../timeDistribution/timeDistribution";
+import emitter from "../../utils/events";
 
 const navDropDownListJSON={
     tool:[
@@ -12,7 +14,8 @@ const navDropDownListJSON={
             type:'Sail',
             href:'##',
             fun:function () {
-                window.open(`http://182.150.46.167:9990/hangyu_login?uuid=${store.getState().role.uuid}`)
+                // window.open(`http://182.150.46.167:9990/hangyu_login?uuid=${store.getState().role.uuid}`)
+                window.open(`${measure_url}/hangyu_login?uuid=${store.getState().role.uuid}`)
             }
         },
         // {
@@ -61,23 +64,58 @@ const navDropDownListJSON={
             }
         },
         {
-            icon:'&#xe611;',
-            text:'设置',
-            type:'Set',
-            href:'##',
-            fun:function () {
-                window.location.href = "#/setting/false";
-            }
-        },
+			icon:'&#xe611;',
+			text:'设置',
+			type:'Set',
+			href:'##',
+			fun:function () {
+				window.location.href = "#/setting/false";
+			}
+		},
+		{
+			icon:'&#xe720;',
+			text:'联系客服',
+			type:'Contact',
+			href:'##',
+			fun:function () {
+				let obj = {};
+				obj.fromNameId = store.getState().role.id;
+				obj.toNameId = 1;
+				obj.responsePlanId = null;
+				emitter.emit('openChat', obj);
+			}
+		},
+		{
+			icon:'&#xe7ef;',
+			text:'使用手册',
+			type:'Manual',
+			href:'##',
+			fun:function () {
+				emitter.emit('usePaper');
+			}
+		},
         {
             icon:'&#xe647;',
             text:'退出',
             type:'Quit',
             href:'##',
             fun:function () {
-                store.dispatch(an('EMPTYDATA', ''));
-                store.dispatch(an('ROLE', null));
-                window.location.href = "#"
+                Axios({
+                    method: 'post',
+                    url: '/logout',
+                    headers: {
+                        'Content-type': 'application/x-www-form-urlencoded'
+                    }
+                }).then((response) => {
+                    if(response.data.opResult === "0"){
+                        store.dispatch(an('EMPTYDATA', ''));
+                        store.dispatch(an('ROLE', null));
+                        window.location.href = "#"
+                    }else{
+                        console.error("退出登录失败")
+                    }
+                });
+
             }
         }
     ]

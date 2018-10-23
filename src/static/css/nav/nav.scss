@@ -7,10 +7,10 @@
     background: #4077fc;
     z-index: 15;
     font-size: 1rem;
-    white-space:nowrap;
-  box-shadow: 0px 2px 16px 0px rgba(0,0,0,0.23);
-  min-width: 1250px;
-    i{
+    white-space: nowrap;
+    box-shadow: 0px 2px 16px 0px rgba(0, 0, 0, 0.23);
+    min-width: 1250px;
+    i {
         font-style: normal;
     }
     .logo {
@@ -19,34 +19,31 @@
         align-items: center;
         margin: 0 20px;
         float: left;
-        > img {
-          width: 86%;
-          margin-top: 9px;
+        >img {
+            width: 86%;
+            margin-top: 9px;
         }
     }
     .bar {
         color: #fefefe;
-        >div{
+        >div {
             float: left;
-            &:first-child{
+            &:first-child {
                 padding-top: 15px;
             }
-            &:last-child{
-              float: right;
-              padding-top: 15px;
+            &:last-child {
+                float: right;
+                padding-top: 15px;
             }
         }
-    }
-
-
-    //下拉菜单
-    .menu{
+    } //下拉菜单
+    .menu {
         //width:120px;
         position: absolute;
         z-index: 0;
         top: 100%;
         overflow: hidden;
-        >div{
+        >div {
             display: flex;
             flex-direction: column;
             position: absolute;
@@ -56,8 +53,9 @@
             -moz-border-radius: 8px;
             border-radius: 8px;
             overflow: hidden;
-            >ul{
-                margin: 0;padding:0;
+            >ul {
+                margin: 0;
+                padding: 0;
                 width: 100%;
                 list-style: none;
                 /*li{
@@ -70,60 +68,59 @@
                 }*/
             }
         }
-        &.active{
-            >div{
+        &.active {
+            >div {
                 transform: translateY(0%);
                 position: relative;
             }
         }
     }
-    .menu-tool{
-      overflow: hidden;
-      position: absolute;
-      border-radius: 5px;
-      &.active{
-        >div{
-          transform: translateY(0%);
-          position: relative;
+    .menu-tool {
+        overflow: hidden;
+        position: absolute;
+        border-radius: 5px;
+        &.active {
+            >div {
+                transform: translateY(0%);
+                position: relative;
+            }
         }
-      }
     }
     .bar-item {
         float: left;
         position: relative;
-        margin:0 5px;
+        margin: 0 5px;
         justify-content: center;
         align-items: center;
         cursor: pointer;
-        color:#ffffff;
+        color: #ffffff;
         font-size: 1.3rem;
-        a{
+        a {
             padding: 5px 10px;
-            color:inherit;
-            text-decoration:none;
+            color: inherit;
+            text-decoration: none;
         }
-        .item-search-box{
+        .item-search-box {
             display: flex;
             align-items: center;
-            height:36px;
+            height: 36px;
             border-radius: 8px;
-            .role-search-input{
+            .role-search-input {
                 border-bottom-left-radius: 8px;
                 border-top-left-radius: 8px;
                 height: inherit;
                 width: 285px;
                 border: none;
                 outline: none;
-                padding:0 5px;
+                padding: 0 5px;
                 text-indent: 1rem;
                 background: none;
                 background-color: #fefefe;
             }
-            .role-line{
-                height: 80%;
-                //border-left: 1px solid #aaa;
+            .role-line {
+                height: 80%; //border-left: 1px solid #aaa;
             }
-            .role-select{
+            .role-select {
                 height: inherit;
                 width: inherit;
                 position: relative;
@@ -131,8 +128,8 @@
                 justify-content: center;
                 align-items: center;
                 cursor: pointer;
-                >a{
-                    text-direction:none;
+                >a {
+                    text-direction: none;
                     display: flex;
                     justify-content: center;
                     align-items: center;
@@ -142,16 +139,15 @@
                     border-top-right-radius: 8px;
                     padding: 0 20px;
                     color: #000;
-                }
-                //角色选择菜单继承下拉css,修该默认宽度
-                >div{
+                } //角色选择菜单继承下拉css,修该默认宽度
+                >div {
                     width: 100%;
                 }
             }
-            .role-search-btn{
+            .role-search-btn {
                 width: 36px;
                 height: 36px;
-                background-color: rgba(0,0,0,0.5);
+                background-color: rgba(0, 0, 0, 0.5);
                 color: #ffffff;
                 cursor: pointer;
                 border-top-right-radius: 8px;
@@ -159,85 +155,88 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                >i{
+                >i {
                     //height: inherit;
                     font-style: normal;
                     display: block;
                     font-size: 3rem;
                 }
-
             }
-        }/*bar-item-search-box*/
-
-        .item-user{
+        }
+        /*bar-item-search-box*/
+        .item-user {
             display: flex;
             flex-direction: row;
             align-items: center;
-            >div{
-                &:first-child{
-                    width:36px;
+            >div {
+                &:first-child {
+                    width: 36px;
                     height: 36px;
                     overflow: hidden;
-                    >img{
+                    >img {
                         width: 100%;
-                        border-radius:50%;
+                        border-radius: 50%;
                         height: 100%;
                     }
                 }
-                &:last-child{
+                &:last-child {
                     color: #ffffff;
                 }
             }
-        }/*user-info*/
-
-        .item-message{
-            width: 36px;;
+        }
+        /*user-info*/
+        .item-message {
+            width: 36px;
+            ;
             height: 36px;
             position: relative;
             cursor: pointer;
             color: #fefefe;
-            >i,>div{
+            >i,
+            >div {
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }
-            >i{
+            >i {
                 width: inherit;
                 height: inherit;
                 position: relative;
                 z-index: 9;
                 font-size: 2rem;
             }
-            >div{
+            >div {
                 width: 18px;
                 height: 18px;
                 position: absolute;
                 z-index: 10;
-                right:0;
+                right: 0;
                 top: 0;
                 -webkit-border-radius: 50%;
                 -moz-border-radius: 50%;
                 border-radius: 50%;
                 background: red;
-                color:inherit;
+                color: inherit;
             }
-        }/*bar-message*/
-        .item-publish{
+        }
+        /*bar-message*/
+        .item-publish {
             padding: 5px 62px;
-            border-radius:30px;
+            border-radius: 30px;
             display: flex;
             align-items: center;
-            background-color: rgba(0,0,0,0.5);
+            background-color: rgba(0, 0, 0, 0.5);
             cursor: pointer;
             color: #ffffff;
-            >i{
+            >i {
                 font-size: 2rem;
                 margin-right: 10px;
             }
         }
-
-    }/*bar-item*/
+    }
+    /*bar-item*/
 }
+
 .drop-down {
     display: flex;
     align-items: center;
@@ -248,6 +247,7 @@
     background: white;
     white-space: nowrap;
 }
+
 .search-box {
     position: absolute;
     top: 38px;
@@ -281,21 +281,331 @@
         opacity: 0.23;
     }
 }
-@media (min-width: 0px) and (max-width: 1500px) {
-  .bar-w{
-    width: 593px;
-  }
-  .bar-item-1{
-    padding-top: 10px;
-    margin: 0 10px !important;
-  }
+/*机场融资按钮*/
+.financingBtn{
+    margin-top: 1px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    float: left;
+    width: 144px;
+    height: 38px;
+    background-color: #ffce58;
+    box-shadow: 1px 2px 6px 0px
+    rgba(60, 120, 255, 0.57);
+    border-radius: 100px;
+    font-size: 2rem;
+    .money{
+        margin-top: -4px;
+    }
+    .spanTitle{
+        font-size: 1.3rem;
+    }
+    .spanNum{
+        min-width: 15px;
+        height: 15px;
+        padding-left: 3px;
+        padding-right: 3px;
+        background-color: #f63756;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 20px;
+        margin-left: 5px;
+        font-size: 1.3rem;
+        font-weight: normal;
+        font-stretch: normal;
+        letter-spacing: 0px;
+        color: #ffffff;
+    }
 }
-@media (min-width: 1500px) {
-  .bar-w{
-    width: 800px;
-  }
-  .bar-item-1{
-    padding-top: 10px;
-    margin: 0 35px !important;
-  }
+
+@media (min-width: 0px) and (max-width: 1635px) {
+    /*.bar-w {
+        width: 525px;
+    }*/
+    .bar-item-1 {
+        padding-top: 10px;
+        margin: 0 10px !important;
+    }
 }
+
+@media (min-width: 1635px) {
+    .bar-w {
+        width: 800px;
+    }
+    .bar-item-1 {
+        padding-top: 10px;
+        margin: 0 35px !important;
+    }
+}
+
+@media screen and (max-width: 1415px) {
+    .nav-box {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 50px;
+        background: #4077fc;
+        z-index: 15;
+        font-size: 1rem;
+        white-space: nowrap;
+        box-shadow: 0px 2px 16px 0px rgba(0, 0, 0, 0.23);
+        min-width: 1250px;
+        i {
+            font-style: normal;
+        }
+        .logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 20px;
+            float: left;
+            >img {
+                width: 65%;
+                margin-top: 9px;
+            }
+        }
+        .bar {
+            color: #fefefe;
+            >div {
+                float: left;
+                &:first-child {
+                    padding-top: 8px;
+                }
+                &:last-child {
+                    float: right;
+                    padding-top: 8px;
+                }
+            }
+        } //下拉菜单
+        .menu {
+            //width:120px;
+            position: absolute;
+            z-index: 0;
+            top: 100%;
+            overflow: hidden;
+            >div {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                transform: translateY(-100%);
+                transition: all 0.2s ease;
+                -webkit-border-radius: 8px;
+                -moz-border-radius: 8px;
+                border-radius: 8px;
+                overflow: hidden;
+                >ul {
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    list-style: none;
+                    /*li{
+              width: inherit;
+              background: cornflowerblue;
+              height: 30px;
+              text-align: center;
+              display: flex;justify-content: center;
+              align-items: center;
+          }*/
+                }
+            }
+            &.active {
+                >div {
+                    transform: translateY(0%);
+                    position: relative;
+                }
+            }
+        }
+        .menu-tool {
+            overflow: hidden;
+            position: absolute;
+            border-radius: 5px;
+            &.active {
+                >div {
+                    transform: translateY(0%);
+                    position: relative;
+                }
+            }
+        }
+        .bar-item {
+            float: left;
+            position: relative;
+            margin: 0 5px;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: #ffffff;
+            font-size: 1.3rem;
+            a {
+                padding: 5px 10px;
+                color: inherit;
+                text-decoration: none;
+            }
+            .item-search-box {
+                display: flex;
+                align-items: center;
+                height: 36px;
+                border-radius: 8px;
+                .role-search-input {
+                    border-bottom-left-radius: 8px;
+                    border-top-left-radius: 8px;
+                    height: inherit;
+                    width: 233px;
+                    border: none;
+                    outline: none;
+                    padding: 0 5px;
+                    text-indent: 1rem;
+                    background: none;
+                    background-color: #fefefe;
+                }
+                .role-line {
+                    height: 80%; //border-left: 1px solid #aaa;
+                }
+                .role-select {
+                    height: inherit;
+                    width: inherit;
+                    position: relative;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    cursor: pointer;
+                    >a {
+                        text-direction: none;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: inherit;
+                        background: #fefefe;
+                        border-bottom-right-radius: 8px;
+                        border-top-right-radius: 8px;
+                        padding: 0 20px;
+                        color: #000;
+                    } //角色选择菜单继承下拉css,修该默认宽度
+                    >div {
+                        width: 100%;
+                    }
+                }
+                .role-search-btn {
+                    width: 36px;
+                    height: 36px;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    color: #ffffff;
+                    cursor: pointer;
+                    border-top-right-radius: 8px;
+                    border-bottom-right-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    >i {
+                        //height: inherit;
+                        font-style: normal;
+                        display: block;
+                        font-size: 3rem;
+                    }
+                }
+            }
+            /*bar-item-search-box*/
+            .item-user {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                >div {
+                    &:first-child {
+                        width: 30px;
+                        height: 30px;
+                        overflow: hidden;
+                        >img {
+                            width: 100%;
+                            border-radius: 50%;
+                            height: 100%;
+                        }
+                    }
+                    &:last-child {
+                        color: #ffffff;
+                    }
+                }
+            }
+            /*user-info*/
+            .item-message {
+                width: 36px;
+                ;
+                height: 36px;
+                position: relative;
+                cursor: pointer;
+                color: #fefefe;
+                >i,
+                >div {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                >i {
+                    width: inherit;
+                    height: inherit;
+                    position: relative;
+                    z-index: 9;
+                    font-size: 2rem;
+                }
+                >div {
+                    width: 18px;
+                    height: 18px;
+                    position: absolute;
+                    z-index: 10;
+                    right: 0;
+                    top: 0;
+                    -webkit-border-radius: 50%;
+                    -moz-border-radius: 50%;
+                    border-radius: 50%;
+                    background: red;
+                    color: inherit;
+                }
+            }
+            /*bar-message*/
+            .item-publish {
+                padding: 2.5px 43px;
+                border-radius: 30px;
+                display: flex;
+                align-items: center;
+                background-color: rgba(0, 0, 0, 0.5);
+                cursor: pointer;
+                color: #ffffff;
+                >i {
+                    font-size: 2rem;
+                    margin-right: 10px;
+                }
+            }
+        }
+		/*bar-item*/
+
+    }
+    .search-box {
+        >div {
+            .left {
+                width: 51px;
+            }
+            .right {
+                width: 220px;
+            }
+        }
+        .line {
+            width: 260px;
+        }
+    }
+    .financingBtn{
+        width: 124px;
+        height: 33px;
+        margin-top: 1px;
+        margin-left: 29px;
+        margin-right: 10px;
+        .money{
+            margin-left: 3px;
+            margin-right: 0px;
+        }
+    }
+}
+
+
+

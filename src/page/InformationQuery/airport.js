@@ -448,7 +448,7 @@ export default class Airport extends Component {
                                         <div className={style['n-name']}><span className={`iconfont ${style['iconfont']}`}>&#xe624;</span>新闻舆情</div>
                                         <div>
                                             {
-                                                this.state.showNewsDetail && <a href="#/publicOpinion"><span className={style['more']}>查看更多></span></a>
+                                                this.state.showNewsDetail && <a href={`#/publicOpinion/${store.getState().searchInfo.mes}/1`}><span className={style['more']}>查看更多></span></a>
                                             }
                                         </div>
                                     </div>

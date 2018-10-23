@@ -45,7 +45,11 @@ export default class ApplyMeasuring extends Component {
             }
         }).then((response)=>{
             if(response.data.opResult === '0') {
-                this.success('申请测算成功，测算结果将在一个工作日内发送至个人中心-测算记录。');
+                let msg = '申请测算成功，方案已保存至个人中心-草稿箱，测算结果将在一个工作日内发送至个人中心-测算记录。';
+                if(this.props.daizhifu) {
+                    msg = '申请测算成功，方案已保存，测算结果将在一个工作日内发送至个人中心-测算记录。';
+                }
+                this.success(msg);
                 this.props.close('1');
                 this.props.renewData(response.data.obj);
             }else {

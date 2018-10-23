@@ -1,11 +1,11 @@
 /*公共样式--开始*/
 @font-face {
-  font-family: 'iconfont';  /* project id 413196 */
-  src: url('//at.alicdn.com/t/font_413196_4dhxh3tny1i.eot');
-  src: url('//at.alicdn.com/t/font_413196_4dhxh3tny1i.eot?#iefix') format('embedded-opentype'),
-  url('//at.alicdn.com/t/font_413196_4dhxh3tny1i.woff') format('woff'),
-  url('//at.alicdn.com/t/font_413196_4dhxh3tny1i.ttf') format('truetype'),
-  url('//at.alicdn.com/t/font_413196_4dhxh3tny1i.svg#iconfont') format('svg');
+    font-family: 'iconfont';  /* project id 413196 */
+    src: url('//at.alicdn.com/t/font_413196_j6pd1mbjbeo.eot');
+    src: url('//at.alicdn.com/t/font_413196_j6pd1mbjbeo.eot?#iefix') format('embedded-opentype'),
+    url('//at.alicdn.com/t/font_413196_j6pd1mbjbeo.woff') format('woff'),
+    url('//at.alicdn.com/t/font_413196_j6pd1mbjbeo.ttf') format('truetype'),
+    url('//at.alicdn.com/t/font_413196_j6pd1mbjbeo.svg#iconfont') format('svg');
 }
 
 @font-face {

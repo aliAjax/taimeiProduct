@@ -3,6 +3,7 @@
 import React, { Component } from 'react';
 import style from './../../static/css/demandList/demandList.scss';
 import emitter from '../../utils/events';
+const winType=(window.screen.width>1366)?1:0;//适配屏幕，1为大屏 0为笔记本
 
 export default class HangsiDemandItem extends Component {
 
@@ -39,21 +40,32 @@ export default class HangsiDemandItem extends Component {
 
     render() {
         const { id, releasetime, demandprogress,invalidResponseCount, title, browsingVolume, days, collectType, aircrfttyp, isResponseDemand, subsidypolicyStr, fixedSubsidyPrice, bottomSubsidyPrice, timeRequirements, recivedResponseCount } = this.props.data;
-        let aircrfttypText = aircrfttyp.split("");
-        let num = 0;
-        let sub = 0;
-        for (let i = 0; i < aircrfttypText.length; i++) {//机型长度过宽换行处理
-            if (aircrfttypText[i] == "/") {
-                num++;
-                if (num == 2) {
-                    sub = i
+        var aircrfttypText="暂无数据";
+        if(winType==1){
+            aircrfttypText = aircrfttyp.split("");
+            let num = 0;
+            let sub = 0;
+            for (let i = 0; i < aircrfttypText.length; i++) {//机型长度过宽换行处理
+                if (aircrfttypText[i] == "/") {
+                    num++;
+                    if (num == 2) {
+                        sub = i
+                    }
                 }
-            }
-        };
-        if (num >= 2) {
-            aircrfttypText.splice(sub + 1, 0, "<br/>")
-        };
-        aircrfttypText = aircrfttypText.join("");
+            };
+            if (num >= 2) {
+                aircrfttypText.splice(sub + 1, 0, "<br/>")
+            };
+            aircrfttypText = aircrfttypText.join("");
+        }else {
+            let newArr=aircrfttyp.split("/");
+            if(newArr.length>3){
+                newArr.length=3;
+                newArr[2]=newArr[2]+"...";
+                // newArr.push("...")
+            };
+            aircrfttypText=newArr.join("<br/>")
+        }
         //时刻需求
         let allTime = "";
         if (timeRequirements == 0) {
@@ -66,15 +78,35 @@ export default class HangsiDemandItem extends Component {
         //参考报价
         let typeText = "暂无报价";
         let typeTextTitle = "暂无报价";
-        if (subsidypolicyStr != null && subsidypolicyStr != "") {//报价换行处理
-            typeText = subsidypolicyStr;
+        if(winType==1){
+            if (subsidypolicyStr != null && subsidypolicyStr != "") {//报价换行处理
+                typeText = subsidypolicyStr;
+                typeTextTitle = subsidypolicyStr.split("<br/>").join(";");
+                typeText=typeText.split("<br/>");
+                if(typeText.length>2){//缩写处理
+                    typeText[2]="···"
+                };
+                typeText=typeText.join("<br/>");
+            }
+        }else {
+            let newArr1=subsidypolicyStr.split("<br/>");
             typeTextTitle = subsidypolicyStr.split("<br/>").join(";");
-            typeText=typeText.split("<br/>");
+            for(let i=0;i<newArr1.length;i++){
+                if(newArr1[i].length==12){
+                    let newS = newArr1[i].split("");
+                    newS.length=9;
+                    newArr1[i]=newS.join("");
+                    newArr1[i]=newArr1[i]+"...";
+                    //newArr1[i].replace(/`万/班`<!--//)-->
+                }
+            };
+            typeText=newArr1;
             if(typeText.length>2){//缩写处理
                 typeText[2]="···"
             };
             typeText=typeText.join("<br/>");
         }
+
         //判断是否已收藏
         let icon, collectHover;
         if (collectType) {
@@ -147,14 +179,14 @@ export default class HangsiDemandItem extends Component {
                     </div>
                     <div style={{ marginLeft: 7, marginRight: 8 }}>
                         <div>机型</div>
-                        <div dangerouslySetInnerHTML={{ __html: aircrfttypText }}></div>
+                        <div dangerouslySetInnerHTML={{ __html: aircrfttypText }} title={aircrfttyp}></div>
                     </div>
-                    <div style={{ marginLeft: 0, marginRight: "15px" }}>
+                    <div style={{ marginLeft: 0, marginRight: "15px" }} className={style['reference']}>
                         <div>
                             参考报价(￥)
                         </div>
                         <div style={{ "color": "#f98c34", fontWeight: "bold", whiteSpace: "nowrap" }}>
-                            <div style={{ color: "#f98c34", maxWidth: 75 }} dangerouslySetInnerHTML={{ __html: typeText }} title={typeTextTitle}></div>
+                            <div style={{ color: "#f98c34",whiteSpace: "nowrap", textOverflow:"ellipsis",overflow:"hidden"}} dangerouslySetInnerHTML={{ __html: typeText }} title={typeTextTitle}></div>
                         </div>
                     </div>
                     <div>

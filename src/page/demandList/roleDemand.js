@@ -10,6 +10,7 @@ import style from './../../static/css/demandList/roleDemand.scss';
 import RoleDemandItem from '../../components/roleDemand/roleDemandItem';
 import emitter from "../../utils/events";
 import { changeConfirmLocale } from 'antd/lib/modal/locale';
+import { relative } from 'upath';
 
 export default class RoleDemand extends Component {
     constructor(props) {
@@ -278,8 +279,8 @@ export default class RoleDemand extends Component {
                             </Fragment> : <Fragment>
                                 <div className={style['roleDemand-tip']} style={this.state.tip ? {} : { display: 'none' }}>
                                     您是否有
-                                    {store.getState().role.role == 1 ? '航线' : '运力'}
-                                    还未开通？赶紧
+                                    {store.getState().role.role == 1 ? '航线还未开通？' : '运力还未消化？'}
+                                    赶紧
                                     <a onClick={this.jichangPublish.bind(this)}>发布</a>
                                     一条吧！
                                 </div>
@@ -301,7 +302,9 @@ export default class RoleDemand extends Component {
                             <Spin spinning={this.state.roleDemandLoading} />
                         </div>
                         <div className={style['roleDemand-body']}>
-                            {this.createItem()}
+                            <div className={style['content']}>
+                                {this.createItem()}
+                            </div>
                         </div>
                     </div>
                     {/* <div className={style['load-data']}>加载数据</div> */}

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import Axios from "./../../utils/axiosInterceptors";
-import styles from '../../static/css/from/airLineNeed.scss'
+import styles from '../../static/css/from/airLineNeedChen.scss'
 import AirportSearch from '../../components/search/airportSearch'
 import PayEarnestMoneyChen from '../../components/payEarnestMoney/payEarnestMoneyChen'
 import SaveOrNot from '../../components/saveOrNot/saveOrNotChen'
@@ -19,7 +19,7 @@ import HourTimer from './../../components/timeComponent/hourTimer';
 import Confirmations from './../../components/confirmations/confirmations';
 
 import moment from 'moment';
-import { Radio, Menu, Dropdown, Icon, DatePicker, TimePicker, Modal, Tooltip } from 'antd';
+import { Radio, Menu, Dropdown, Icon, DatePicker, TimePicker, Modal, Tooltip, Spin } from 'antd';
 import { relative } from 'upath';
 const RadioGroup = Radio.Group;
 const { RangePicker } = DatePicker;
@@ -30,6 +30,20 @@ export default class EditCapacityRelease extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            isLoading: true,
+            demand: {},  // 10.10 增加，用来板寸机场-重新编辑的demand对象
+            airlineQiangzhiWarnShow: false,  // 8.16 增加 强制执行-机场警告
+            qiangzhiPst: '',  // 8.16 增加 强制执行-经停三字码
+            qiangzhiArrv: '',  // 8.16 增加 强制执行-到达三字码
+            arrvProOrArea: '',  // 8.16 增加 航路设计是否禁止选择
+            pstProOrArea: '',  // 8.16 增加 航路设计是否禁止选择
+            designRadioDisable: false,  // 8.16 增加 航路设计是否禁止选择
+            demandPlan: {},  // 8.16 增加
+            mandatoryDesignation: null,  // 8.16 增加 目标航点或甩飞航点是否强制指定（0-否，1-是）
+            pstMandatoryDesignation: null,  // 8.16 增加 经停点是否强制指定（0-否，1-是）
+            pstAreaType: null,  // 8.16 增加 经停航点类型（1-机场三字码，2-省份，3区域）
+            areaType: null,  // 8.16 增加 甩飞或目标航点类型（1-机场三字码，2-省份，3区域）
+
             editItem: {},  // 7.25增加，用来判断方案是否更改
             responseProgress: '',  // 7.25增加-意向的progress，用于判断 我要洽谈-申请测算时是否需要保存草稿,8 -1 时保存草稿
             sailingtime: '',  // '整年'、‘冬春航季’。。。
@@ -123,6 +137,7 @@ export default class EditCapacityRelease extends Component {
             airlineWarnShow: false,  // 始发、经停、到达警告
             airline1WarnShow: false, // 为经停、甩飞时，必须全部填写警告
             airline2WarnShow: false, // 始发、到达同时填写
+            airline3WarnShow: false,  // 始发航点必须是始发机场警告
             quoteWarnShow: false,  // 报价警告
             periodValidityWarnShow: false,  // 需求有效期警告
             saveProjectWarnShow: false,  // 新增方案警告
@@ -154,10 +169,11 @@ export default class EditCapacityRelease extends Component {
                 date: false,
                 contact: false,//联系人
                 ihome: false,//移动电话
+
             },
             airport: false,
 
-            performShift:0,
+            performShift: 0,
 
             visible_response: false,
             visible_reEdit: false,
@@ -178,6 +194,16 @@ export default class EditCapacityRelease extends Component {
             //     group_arrv: { pst: '', arrvLevel: '', arrvEnter: '' },
             // }
         };
+    }
+    startLoading = () => {
+        this.setState({
+            isLoading: true
+        })
+    }
+    stopLoading = () => {
+        this.setState({
+            isLoading: false
+        })
     }
     closePopup = () => {
         emitter.emit('openPopup', {
@@ -243,8 +269,32 @@ export default class EditCapacityRelease extends Component {
             pstBackEnter: time
         })
     }
-    designRadioChangeFn(e) {  // 1:直飞，2：经停，3：甩飞
-        let value, myDptNm, myDpt, targetPoint, searchText1Bus;
+    designRadioChangeFn2(e) {  // 1:直飞，2：经停，3：甩飞
+        let value = e.target.value;
+        this.setState({
+            designRadioValue: value
+        }, () => {
+            this.bindAreaType();
+            '切换绑定'
+        })
+    }
+    bindAreaType = () => {
+        let value = this.state.designRadioValue, myDptNm, myDpt, targetPoint, searchText1Bus;
+        console.log(value, '航路设计值')
+
+        let pstAreaType = this.state.demandPlan.pstAreaType;  // 经停航点类型（1-机场三字码，2-省份，3区域）
+        let areaType = this.state.demandPlan.areaType;  // 甩飞或目标航点类型（1-机场三字码，2-省份，3区域）
+        let pstMandatoryDesignation = this.state.demandPlan.pstMandatoryDesignation; // 经停点是否强制指定（0-否，1-是）
+        let mandatoryDesignation = this.state.demandPlan.mandatoryDesignation;  // 目标航点或甩飞航点是否强制指定（0-否，1-是）
+        let routeType = this.state.demandPlan.routeType;  // 运力类型 0-直飞，1-经停
+        let pstProOrArea = '';
+        let arrvProOrArea = '';
+        if (pstAreaType != 1) {
+            pstProOrArea = this.state.demandPlan.pst;
+        }
+        if (areaType != 1) {
+            arrvProOrArea = this.state.demandPlan.arrv;
+        }
         if (store.getState().role.role == 0) {//航司
             let responsePlan = this.state.responsePlans[0];
             myDptNm = this.state.releaseDemandPointNm; // 始发机场名
@@ -256,6 +306,167 @@ export default class EditCapacityRelease extends Component {
             myDpt = this.state.myDpt;
             targetPoint = this.state.myCode;  // 目标航点三字码
             searchText1Bus = this.state.myName;  // 目标航点输入框存储
+            // TODO:9.20号新增↓↓↓↓↓↓↓↓↓
+            if (pstMandatoryDesignation == 1) {  // 强制执行-经停
+                if (pstAreaType == 1) {  //强制-机场，无需改变
+
+                } else { //强制-区域/省份
+                    targetPoint = '';  // 本厂三字码
+                    searchText1Bus = '';  // 本厂输入框存储
+                }
+            }
+            if (mandatoryDesignation == 1) {  // 强制执行-甩飞
+                if (areaType == 1) {  //强制-机场，无需改变
+
+                } else { //强制-区域/省份
+                    targetPoint = '';  // 本厂三字码
+                    searchText1Bus = '';  // 本厂输入框存储
+                }
+            }
+            // TODO:9.20号新增↑↑↑↑↑↑↑↑↑
+        }
+        if (targetPoint == myDpt) {
+            targetPoint = '';
+            searchText1Bus = '';
+        }
+        if (value == 1) {  // 选中了“直飞”没有“经停输入框”
+            this.setState({
+                showPassInput: false,
+                searchText3: '',  // 经停输入框文字
+                searchText3Bus: '',  // 经停输入框存储
+                pst: '',  // 经停三字码
+                searchText2: myDptNm,  // 始发
+                searchText2Bus: myDptNm,
+                dpt: myDpt,
+                searchText4: pstAreaType == '1' && areaType == '1' ? searchText1Bus : '',
+                searchText4Bus: pstAreaType == '1' && areaType == '1' ? searchText1Bus : '',
+                arrv: pstAreaType == '1' && areaType == '1' ? targetPoint : '',
+                alertShow: true,
+                pstAreaType,
+                areaType,
+                pstProOrArea,
+                arrvProOrArea,
+                pstMandatoryDesignation,
+                mandatoryDesignation,
+                airlineWarnShow: false,
+                airline1WarnShow: false,
+                airline2WarnShow: false,
+                airline3WarnShow: false,
+                airlineQiangzhiWarnShow: false,
+            })
+        } else if (value == 2) { // 2：经停
+            if (routeType === '0' && mandatoryDesignation == 1 && areaType != 1) {  // 航司直飞、强制到达省份/区域
+                pstAreaType = areaType;
+                areaType = null;
+                pstProOrArea = arrvProOrArea;
+                arrvProOrArea = '';
+                pstMandatoryDesignation = mandatoryDesignation;
+                mandatoryDesignation = null;
+            }
+            this.setState({
+                showPassInput: true,
+                searchText3: pstAreaType == '1' && areaType == '1' ? searchText1Bus : '',  // 经停输入框文字
+                searchText3Bus: pstAreaType == '1' && areaType == '1' ? searchText1Bus : '',  // 经停输入框存储
+                pst: pstAreaType == '1' && areaType == '1' ? targetPoint : '',  // 经停三字码
+                searchText2: myDptNm,  // 始发
+                searchText2Bus: myDptNm,
+                dpt: myDpt,
+                searchText4: '', // 到达
+                searchText4Bus: '',
+                arrv: '',
+                alertShow: true,
+                pstAreaType,
+                areaType,
+                pstProOrArea,
+                arrvProOrArea,
+                pstMandatoryDesignation,
+                mandatoryDesignation,
+                airlineWarnShow: false,
+                airline1WarnShow: false,
+                airline2WarnShow: false,
+                airline3WarnShow: false,
+                airlineQiangzhiWarnShow: false,
+            })
+        } else if (value == 3) {  // 3：甩飞
+            if (routeType === '0' && mandatoryDesignation == 1 && areaType != 1) {  // 航司直飞、强制到达省份/区域
+                pstAreaType = areaType;
+                areaType = null;
+                pstProOrArea = arrvProOrArea;
+                arrvProOrArea = '';
+                pstMandatoryDesignation = mandatoryDesignation;
+                mandatoryDesignation = null;
+            }
+            this.setState({
+                showPassInput: true,
+                searchText3: '',  // 经停输入框文字
+                searchText3Bus: '',  // 经停输入框存储
+                pst: '',  // 经停三字码
+                searchText2: myDptNm,  // 始发
+                searchText2Bus: myDptNm,
+                dpt: myDpt,
+                searchText4: pstAreaType == '1' && areaType == '1' ? searchText1Bus : '',  // 到达
+                searchText4Bus: pstAreaType == '1' && areaType == '1' ? searchText1Bus : '',
+                arrv: pstAreaType == '1' && areaType == '1' ? targetPoint : '',
+                alertShow: true,
+                pstAreaType,
+                areaType,
+                pstProOrArea,
+                arrvProOrArea,
+                pstMandatoryDesignation,
+                mandatoryDesignation,
+                airlineWarnShow: false,
+                airline1WarnShow: false,
+                airline2WarnShow: false,
+                airline3WarnShow: false,
+                airlineQiangzhiWarnShow: false,
+            })
+        }
+    }
+    designRadioChangeFn(e) {  // 1:直飞，2：经停，3：甩飞
+        let value, myDptNm, myDpt, targetPoint, searchText1Bus;
+
+        let pstAreaType = this.state.demandPlan.pstAreaType;  // 经停航点类型（1-机场三字码，2-省份，3区域）
+        let areaType = this.state.demandPlan.areaType;  // 甩飞或目标航点类型（1-机场三字码，2-省份，3区域）
+        let pstMandatoryDesignation = this.state.demandPlan.pstMandatoryDesignation; // 经停点是否强制指定（0-否，1-是）
+        let mandatoryDesignation = this.state.demandPlan.mandatoryDesignation;  // 目标航点或甩飞航点是否强制指定（0-否，1-是）
+        let routeType = this.state.demandPlan.routeType;  // 运力类型 0-直飞，1-经停
+        let pstProOrArea = '';
+        let arrvProOrArea = '';
+        if (pstAreaType != 1) {
+            pstProOrArea = this.state.demandPlan.pst;
+        }
+        if (areaType != 1) {
+            arrvProOrArea = this.state.demandPlan.arrv;
+        }
+        if (store.getState().role.role == 0) {//航司
+            let responsePlan = this.state.responsePlans[0];
+            myDptNm = this.state.releaseDemandPointNm; // 始发机场名
+            myDpt = this.state.releaseDemandPoint;
+            targetPoint = this.state.targetPoint;  // 目标航点三字码
+            searchText1Bus = this.state.targetPointNm;  // 目标航点输入框存储
+        } else {  // 机场
+            myDptNm = this.state.myDptNm; // 始发机场名
+            myDpt = this.state.myDpt;
+            targetPoint = this.state.myCode;  // 目标航点三字码
+            searchText1Bus = this.state.myName;  // 目标航点输入框存储
+            // TODO:9.20号新增↓↓↓↓↓↓↓↓↓
+            if (pstMandatoryDesignation == 1) {  // 强制执行-经停
+                if (pstAreaType == 1) {  //强制-机场，无需改变
+
+                } else { //强制-区域/省份
+                    targetPoint = '';  // 本厂三字码
+                    searchText1Bus = '';  // 本厂输入框存储
+                }
+            }
+            if (mandatoryDesignation == 1) {  // 强制执行-甩飞
+                if (areaType == 1) {  //强制-机场，无需改变
+
+                } else { //强制-区域/省份
+                    targetPoint = '';  // 本厂三字码
+                    searchText1Bus = '';  // 本厂输入框存储
+                }
+            }
+            // TODO:9.20号新增↑↑↑↑↑↑↑↑↑
         }
         if (targetPoint == myDpt) {
             targetPoint = '';
@@ -276,9 +487,27 @@ export default class EditCapacityRelease extends Component {
                 arrv: targetPoint,
                 designRadioValue: 1,
                 alertShow: true,
-
+                pstAreaType,
+                areaType,
+                pstProOrArea,
+                arrvProOrArea,
+                pstMandatoryDesignation,
+                mandatoryDesignation,
+                airlineWarnShow: false,
+                airline1WarnShow: false,
+                airline2WarnShow: false,
+                airline3WarnShow: false,
+                airlineQiangzhiWarnShow: false,
             })
         } else if (value == 2) { // 2：经停
+            if (routeType === '0' && mandatoryDesignation == 1 && areaType != 1) {  // 航司直飞、强制到达省份/区域
+                pstAreaType = areaType;
+                areaType = null;
+                pstProOrArea = arrvProOrArea;
+                arrvProOrArea = '';
+                pstMandatoryDesignation = mandatoryDesignation;
+                mandatoryDesignation = null;
+            }
             this.setState({
                 showPassInput: true,
                 searchText3: searchText1Bus,  // 经停输入框文字
@@ -292,14 +521,27 @@ export default class EditCapacityRelease extends Component {
                 arrv: '',
                 designRadioValue: 2,
                 alertShow: true,
-
-
-                // pstEnter: this.state.arrvEnter,
-                // pstBackLevel: this.state.arrvLevel,
-                // arrvEnter: '',
-                // arrvLevel: '',
+                pstAreaType,
+                areaType,
+                pstProOrArea,
+                arrvProOrArea,
+                pstMandatoryDesignation,
+                mandatoryDesignation,
+                airlineWarnShow: false,
+                airline1WarnShow: false,
+                airline2WarnShow: false,
+                airline3WarnShow: false,
+                airlineQiangzhiWarnShow: false,
             })
         } else if (value == 3) {  // 3：甩飞
+            if (routeType === '0' && mandatoryDesignation == 1 && areaType != 1) {  // 航司直飞、强制到达省份/区域
+                pstAreaType = areaType;
+                areaType = null;
+                pstProOrArea = arrvProOrArea;
+                arrvProOrArea = '';
+                pstMandatoryDesignation = mandatoryDesignation;
+                mandatoryDesignation = null;
+            }
             this.setState({
                 showPassInput: true,
                 searchText3: '',  // 经停输入框文字
@@ -313,11 +555,17 @@ export default class EditCapacityRelease extends Component {
                 arrv: targetPoint,
                 designRadioValue: 3,
                 alertShow: true,
-
-                // dptLevel: '',
-                // dptEnter: '',
-                // pstLevel: this.state.dptLevel,
-                // pstBackEnter: this.state.dptEnter,
+                pstAreaType,
+                areaType,
+                pstProOrArea,
+                arrvProOrArea,
+                pstMandatoryDesignation,
+                mandatoryDesignation,
+                airlineWarnShow: false,
+                airline1WarnShow: false,
+                airline2WarnShow: false,
+                airline3WarnShow: false,
+                airlineQiangzhiWarnShow: false,
             })
         }
     }
@@ -348,6 +596,19 @@ export default class EditCapacityRelease extends Component {
             alertShow: true,
         })
     }
+    // 航点输入搜索延时
+    inputTimeout() {  // 输入框延时
+        this.setState({
+            update: true,
+        }, () => {
+            clearInterval(window.timer);
+            window.timer = setTimeout(() => {
+                this.setState({
+                    update: false,
+                })
+            }, 200);
+        });
+    }
     // TODO: 始发运力对应的事件
     searchTextChangeFn2(e) {  //输入框输入内容改变
         let target = e.target;
@@ -365,15 +626,7 @@ export default class EditCapacityRelease extends Component {
                 searchText2: target.value,
             })
         }
-        this.setState({
-            update: true,
-        }, () => {
-            setTimeout(() => {
-                this.setState({
-                    update: false,
-                })
-            })
-        })
+        this.inputTimeout();
     }
     inputClickFn2(e) {  // 输入框焦点事件
         let target = e.target;
@@ -390,6 +643,8 @@ export default class EditCapacityRelease extends Component {
                 airlineWarnShow: false,
                 airline1WarnShow: false,
                 airline2WarnShow: false,
+                airline3WarnShow: false,
+                airlineQiangzhiWarnShow: false,
             }
         })
     }
@@ -451,15 +706,7 @@ export default class EditCapacityRelease extends Component {
                 searchText3: target.value,
             })
         }
-        this.setState({
-            update: true,
-        }, () => {
-            setTimeout(() => {
-                this.setState({
-                    update: false,
-                })
-            })
-        })
+        this.inputTimeout();
     }
     inputClickFn3(e) {  // 输入框焦点事件
         let target = e.target;
@@ -476,6 +723,8 @@ export default class EditCapacityRelease extends Component {
                 airlineWarnShow: false,
                 airline1WarnShow: false,
                 airline2WarnShow: false,
+                airline3WarnShow: false,
+                airlineQiangzhiWarnShow: false,
             }
         })
     }
@@ -541,15 +790,7 @@ export default class EditCapacityRelease extends Component {
                 }
             })
         }
-        this.setState({
-            update: true,
-        }, () => {
-            setTimeout(() => {
-                this.setState({
-                    update: false,
-                })
-            })
-        })
+        this.inputTimeout();
     }
     inputClickFn4(e) {  // 输入框焦点事件
         let target = e.target;
@@ -566,6 +807,8 @@ export default class EditCapacityRelease extends Component {
                 airlineWarnShow: false,
                 airline1WarnShow: false,
                 airline2WarnShow: false,
+                airline3WarnShow: false,
+                airlineQiangzhiWarnShow: false,
             }
         })
     }
@@ -631,10 +874,9 @@ export default class EditCapacityRelease extends Component {
             date: date,
             daysWarnShow: false,
             alertShow: true,
-        },()=>{
+        }, () => {
             this.changeEvent(this.state.sailingtime)
         })
-        // console.log(data)
     }
     // 计划执行时间
     changeEvent(date) {
@@ -679,7 +921,6 @@ export default class EditCapacityRelease extends Component {
         this.setState({
             performShift
         })
-        console.log(performShift)
     }
     //固定计划执行班次计算方法
     calculateFixation(num) {
@@ -785,11 +1026,88 @@ export default class EditCapacityRelease extends Component {
         let dpt = this.state.dpt;  // 始发航点三字码
         let pst = this.state.pst;  // 经停航点三字码
         let arrv = this.state.arrv;  // 到达航点三字码
+        let qiangzhiPst = this.state.qiangzhiPst;  // 强制执行-经停三字码
+        let qiangzhiArrv = this.state.qiangzhiArrv;  // 强制执行-到达三字码
         let myRef = this.refs['myRef'];
+        let showPassInput = this.state.showPassInput;  // 经停输入框是否显示
+        let routeType = this.state.demandPlan.routeType;  // 运力类型 0-直飞，1-经停
         this.setState({
             saveProjectWarnShow: false,
         });
+        if (this.state.pstMandatoryDesignation == 1) {  // 强制执行-经停
+            if (this.state.pstAreaType == 1) {  //机场
+                if (qiangzhiPst != pst) {
+                    this.setState({
+                        showAirportSearch2: false,
+                        airlineWarnShow: false,
+                        airline1WarnShow: false,
+                        airline2WarnShow: false,
+                        airline3WarnShow: false,
+                        airlineQiangzhiWarnShow: true
+                    });
+                    return false
+                }
+            } else {  // 9.20新增，强制执行-省份/区域
+                if (!showPassInput) {
+                    this.setState({
+                        showAirportSearch2: false,
+                        airlineWarnShow: false,
+                        airline1WarnShow: false,
+                        airline2WarnShow: false,
+                        airline3WarnShow: false,
+                        airlineQiangzhiWarnShow: true
+                    });
+                    return false
+                }
+            }
+        }
+        if (this.state.mandatoryDesignation == 1) {  // 强制执行-甩飞
+            if (routeType == 1 && !showPassInput) {
+                this.setState({
+                    showAirportSearch2: false,
+                    airlineWarnShow: false,
+                    airline1WarnShow: false,
+                    airline2WarnShow: false,
+                    airline3WarnShow: false,
+                    airlineQiangzhiWarnShow: true
+                });
+                return false
+            }
+            if (this.state.areaType == 1) {  //机场
+                if (showPassInput) {  // 经停或甩飞
+                    if ((routeType == 0 && qiangzhiArrv != pst) || (routeType == 1 && qiangzhiArrv != arrv)) {
+                        this.setState({
+                            showAirportSearch2: false,
+                            airlineWarnShow: false,
+                            airline1WarnShow: false,
+                            airline2WarnShow: false,
+                            airline3WarnShow: false,
+                            airlineQiangzhiWarnShow: true
+                        });
+                        return false
+                    }
+                } else {  // 直飞
+                    if (qiangzhiArrv != arrv) {
+                        this.setState({
+                            showAirportSearch2: false,
+                            airlineWarnShow: false,
+                            airline1WarnShow: false,
+                            airline2WarnShow: false,
+                            airline3WarnShow: false,
+                            airlineQiangzhiWarnShow: true
+                        });
+                        return false
+                    }
+                }
+            }
+        }
         if (myDpt && myCode) {
+            if (myDpt != dpt) {  // TODO:10.15更改，始发航点必须为始发机场
+                this.setState({
+                    airline3WarnShow: true
+                });
+                return false
+            }
             if ((myCode != dpt && myCode != pst && myCode != arrv)
                 || (myDpt != dpt && myDpt != pst && myDpt != arrv)) {
                 this.setState({
@@ -798,12 +1116,18 @@ export default class EditCapacityRelease extends Component {
                 return false
             }
         } else {
-            if (myDpt != dpt && myDpt != pst && myDpt != arrv) {
+            if (myDpt != dpt) {  // TODO:10.15更改，始发航点必须为始发机场
+                this.setState({
+                    airline3WarnShow: true
+                });
+                return false
+            }
+            /*if (myDpt != dpt && myDpt != pst && myDpt != arrv) {
                 this.setState({
                     airlineWarnShow: true
                 });
                 return false
-            }
+            }*/
         }
         if (this.state.designRadioValue == 1 && (dpt == '' || arrv == '')) {
             this.setState({
@@ -848,6 +1172,7 @@ export default class EditCapacityRelease extends Component {
                             airline1WarnShow: false,
                             quoteWarnShow: false,
                             airline2WarnShow: false,
+                            airline3WarnShow: false,
                         }
                     })
                 } else {
@@ -855,8 +1180,8 @@ export default class EditCapacityRelease extends Component {
                 }
             } else {  // “编辑方案”
                 let editItem = this.state.editItem;
-                try{
-                    if(obj.dpt == editItem.dpt && obj.pst == editItem.pst && obj.arrv == editItem.arrv && obj.quoteType == editItem.quoteType && obj.quotedPrice == editItem.quotedPrice) {
+                try {
+                    if (obj.dpt == editItem.dpt && obj.pst == editItem.pst && obj.arrv == editItem.arrv && obj.quoteType == editItem.quoteType && obj.quotedPrice == editItem.quotedPrice) {
                         obj.calculationState = editItem.calculationState;
                     }
                 } catch (e) {
@@ -883,6 +1208,7 @@ export default class EditCapacityRelease extends Component {
                         airline1WarnShow: false,
                         quoteWarnShow: false,
                         airline2WarnShow: false,
+                        airline3WarnShow: false,
                     }
                 })
             }
@@ -904,13 +1230,12 @@ export default class EditCapacityRelease extends Component {
         // }
     }
     editProject(item, index) {  // 编辑方案
-        console.info(item);
         // this.state.responsePlans[index].state = 0;  // 测算状态(0-正常，1-删除，2-测算中，3-测算完成)
         if (item.pst) {
             if (item.pst == this.state.myCode) {
-                this.state.designRadioValue = 3;
-            } else {
                 this.state.designRadioValue = 2;
+            } else {
+                this.state.designRadioValue = 3;
             }
             this.setState((prev) => {
                 return ({
@@ -1144,7 +1469,6 @@ export default class EditCapacityRelease extends Component {
             } else if (type == 1 || type == 4) {
                 demand.savatype = '3';  // 1-保存方案(会成为待支付)，2-正式提交，3-保存草稿，4-机场申请测算时先保存草稿
             }
-            console.info(this.state.id);
             if (type == 3 && this.state.id) {  // 申请测算且有id
                 if (this.state.responseProgress == 8 || this.state.responseProgress == '-1' || this.state.responseProgress == '2') {  // 8：草稿， -1：待支付, 2:已撤回
                     // (item.id == '' || item.id == null)
@@ -1168,9 +1492,9 @@ export default class EditCapacityRelease extends Component {
                             let data = {};
                             data.OnceSailingMeasurePrice = response.data.OnceSailingMeasurePrice;
                             data.demandId = this.state.demandId;
-                            if(response.data.responsePlanId) {
+                            if (response.data.responsePlanId) {
                                 data.responsePlanId = response.data.responsePlanId;
-                            }else {
+                            } else {
                                 data.responsePlanId = item.id;
                             }
                             this.setState({
@@ -1311,15 +1635,14 @@ export default class EditCapacityRelease extends Component {
             msg.pstBackLevel = true;
             msg.pstBackEnter = true;
         }
-        let count = Object.keys(msg).length;
+
+        let verifyResult = true;
         if (msg) {
             for (let m in msg) {
-                if (msg[m]) {
-                    count--
-                }
+                verifyResult = verifyResult && msg[m];
             }
         }
-        return count == 0 ? true : false;
+        return verifyResult
     }
 
     sendDataFn() {   //TODO：确认提交航线方案。
@@ -1342,7 +1665,13 @@ export default class EditCapacityRelease extends Component {
                 return false;
             }
         }
-        if (responsePlans.length == 0) {
+        if (demand.days == '') {
+            this.setState({
+                daysWarnShow: true,
+            });
+            myRef.scrollTop = 200;
+            return false
+        } else if (responsePlans.length == 0) {
             this.setState({
                 saveProjectWarnShow: true,
             });
@@ -1413,103 +1742,117 @@ export default class EditCapacityRelease extends Component {
         return responsePlans;
     }
     sendData2Fn(editType) {
+        let demand = this.save();
+        let _this = this;
+        editType == 3 || editType == 4 ? demand.employeeId = this.state.employeeId : '';
+        if (editType == 3 || editType == 4) {
+            this.setState({
+                isInit: 0
+            })
+            if (!this.verifyForm()) {
+                return;
+            }
+            demand.responsePlans = demand.responsePlans.map((value) => {
+                value.dpt = _this.state.dpt;
+                value.pst = _this.state.designRadioValue != 1 ? _this.state.pst : '';//判断后传参
+                value.arrv = _this.state.arrv;
+                value.quoteType = _this.state.quoteType;
+                value.quotedPrice = _this.state.quotedPrice;
+                return value
+            });
+            demand.dptTime = this.state.dptLevel + ',' + this.state.dptEnter;
+            demand.pstTime = this.state.designRadioValue != 1 ? (this.state.pstLevel + ',' + this.state.pstEnter) : '';//判断后传参
+            demand.arrvTime = this.state.arrvLevel + ',' + this.state.arrvEnter;
+            demand.pstTimeBack = this.state.designRadioValue != 1 ? this.state.pstBackLevel + ',' + this.state.pstBackEnter : '';
+        }
+        demand.delResponsePlanIds = this.state.delResponsePlanIds.join(',');
+        let contact = this.state.contact; // 联系人
+        let ihome = this.state.ihome;  // 联系方式
+        let ihomeWarnShow = this.state.ihomeWarnShow;  // 联系方式警告
+        let periodValidity = this.state.periodValidity; // 需求有效期
+        let myRef = this.refs['myRef'];
+        if (periodValidity != null && periodValidity != '') {
+            let p = moment(periodValidity);   // 需求有效期
+            // let n = moment().endOf('day').format(dateFormat);  // 当前时间
+            let n = moment().subtract(1, 'd').add(1, "M");  // 当前时间后延一个月
+            if (moment.min(n, p) == p) {
+                this.setState({
+                    periodValidity3WarnShow: true
+                });
+                myRef.scrollTop = 500;
+                return false;
+            }
+        }
+        /* if (this.state.responsePlans.length == 0) {
+             this.setState({
+                 saveProjectWarnShow: true,
+             });
+             myRef.scrollTop = 0;
+             return false
+         } else */
+        if (demand.days == '') {
+            this.setState({
+                daysWarnShow: true,
+            });
+            myRef.scrollTop = 200;
+            return false
+        } else if (contact == '' || contact == null) {
+            myRef.scrollTop = 320;
+            this.setState({
+                contactWarnShow: true
+            });
+            return false
+        } else if (ihomeWarnShow || ihome == '' || ihome == null) {
+            this.setState({
+                ihomeWarnShow: true
+            });
+            myRef.scrollTop = 320;
+            return false
+        } else if (periodValidity == '' || periodValidity == null) {
+            this.setState({
+                periodValidityWarnShow: true
+            });
+            return false
+        }
+        else {
+            this.setState({
+                visible_reEdit: true,
+                demand: demand,
+            });
+        }
+    }
+    sendData3Fn() {
         this.setState({
             uploading: true,
         }, () => {
-            let demand = this.save();
-            let _this = this;
-            editType == 3 || editType == 4 ? demand.employeeId = this.state.employeeId : '';
-            if (editType == 3 || editType == 4) {
-                this.setState({
-                    isInit: 0
-                })
-                if (!this.verifyForm()) {
-                    return;
+            let responsePlans = this.responsePlansFn(this.state.demand.responsePlans);
+            this.state.demand.responsePlans = responsePlans;
+            Axios({
+                method: 'post',
+                url: '/responseUpdateV2',
+                /*params:{  // 一起发送的URL参数
+                    demandId: demandId,
+                    employeeId: employeeId
+                },*/
+                data: JSON.stringify(this.state.demand),
+                dataType: 'json',
+                headers: {
+                    'Content-type': 'application/json;charset=utf-8'
                 }
-                demand.responsePlans = demand.responsePlans.map((value) => {
-                    value.dpt = _this.state.dpt;
-                    value.pst = _this.state.designRadioValue != 1 ? _this.state.pst : '';//判断后传参
-                    value.arrv = _this.state.arrv;
-                    value.quoteType = _this.state.quoteType;
-                    value.quotedPrice = _this.state.quotedPrice;
-                    return value
-                });
-                demand.dptTime = this.state.dptLevel + ',' + this.state.dptEnter;
-                demand.pstTime = this.state.designRadioValue != 1 ? (this.state.pstLevel + ',' + this.state.pstEnter) : '';//判断后传参
-                demand.arrvTime = this.state.arrvLevel + ',' + this.state.arrvEnter;
-                demand.pstTimeBack = this.state.designRadioValue != 1 ? this.state.pstBackLevel + ',' + this.state.pstBackEnter : '';
-            }
-            demand.delResponsePlanIds = this.state.delResponsePlanIds.join(',');
-            let contact = this.state.contact; // 联系人
-            let ihome = this.state.ihome;  // 联系方式
-            let ihomeWarnShow = this.state.ihomeWarnShow;  // 联系方式警告
-            let periodValidity = this.state.periodValidity; // 需求有效期
-            let myRef = this.refs['myRef'];
-            /* if (this.state.responsePlans.length == 0) {
-                 this.setState({
-                     saveProjectWarnShow: true,
-                 });
-                 myRef.scrollTop = 0;
-                 return false
-             } else */
-            if (demand.days == '') {
+            }).then((response) => {
+                if (response.data.opResult == 0) {
+                    this.success('修改成功！');
+                    this.closeFormBox();
+                } else {
+                    this.info('此方案状态有变,不可修改,请刷新');
+                    // this.error('修改失败！');
+                    this.closeFormBox();
+                }
                 this.setState({
-                    daysWarnShow: true,
-                });
-                myRef.scrollTop = 200;
-                return false
-            } else if (contact == '' || contact == null) {
-                myRef.scrollTop = 320;
-                this.setState({
-                    contactWarnShow: true
-                });
-                return false
-            } else if (ihomeWarnShow || ihome == '' || ihome == null) {
-                this.setState({
-                    ihomeWarnShow: true
-                });
-                myRef.scrollTop = 320;
-                return false
-            } else if (periodValidity == '' || periodValidity == null) {
-                this.setState({
-                    periodValidityWarnShow: true
-                });
-                return false
-            }
-            else {
-                this.setState({
-                    noMsgXiugai: true,
-                }, () => {
-                    let responsePlans = this.responsePlansFn(demand.responsePlans);
-                    demand.responsePlans = responsePlans;
-                    Axios({
-                        method: 'post',
-                        url: '/responseUpdateV2',
-                        /*params:{  // 一起发送的URL参数
-                            demandId: demandId,
-                            employeeId: employeeId
-                        },*/
-                        data: JSON.stringify(demand),
-                        dataType: 'json',
-                        headers: {
-                            'Content-type': 'application/json;charset=utf-8'
-                        }
-                    }).then((response) => {
-                        if (response.data.opResult == 0) {
-                            this.success('修改成功！');
-                            this.closeFormBox();
-                        } else {
-                            this.info('此方案状态有变,不可修改,请刷新');
-                            // this.error('修改失败！');
-                            this.closeFormBox();
-                        }
-                        this.setState({
-                            uploading: false,
-                        })
-                    })
-                });
-            }
-        });
+                    uploading: false,
+                })
+            })
+        })
     }
 
     closeMoneyFn(i) {  // 关闭支付意向金 1:成功  2：失败
@@ -1539,7 +1882,6 @@ export default class EditCapacityRelease extends Component {
         this.responseData();
     }
     measuringClickFn(item, index) {  // 点击“申请测算”
-        console.info(item);
         this.state.responsePlans[index].click = 1;  // 申请测算是否点击 0：未点击， 1：点击
         this.setState({
             noMsgCesuan: true,
@@ -1652,7 +1994,7 @@ export default class EditCapacityRelease extends Component {
                 ihome: data.ihome,  // 联系方式
                 saveDraftId: data.id,  // TODO：自己添加的“保存草稿的id”
                 sailingtime: data.sailingtime,  // 计划通航时间
-            }, ()=>{
+            }, () => {
                 this.changeEvent(this.state.sailingtime);
             });
         } else if (editType == 2) {  // 2:重新编辑
@@ -1705,7 +2047,7 @@ export default class EditCapacityRelease extends Component {
                 ihome: data.ihome,  // 联系方式
                 saveDraftId: data.id,  // TODO：自己添加的“保存草稿的id”
                 sailingtime: data.sailingtime,  // 计划通航时间
-            }, ()=>{
+            }, () => {
                 this.changeEvent(this.state.sailingtime);
             });
         }
@@ -1714,10 +2056,9 @@ export default class EditCapacityRelease extends Component {
     // 确认选择方案,数据初始化
     initEdit3(editType, obj) {
         let data = obj.reResponse;
+        let demandPlan = obj.demandPlan;
         if (!data) return;
         let { dptTime, pstTime, arrvTime, pstTimeBack, performShift = 0 } = data;
-        console.log(performShift)
-        console.log(data)
         // 时刻
         let dptLevel = dptTime ? dptTime.split(',')[0] : '',
             dptEnter = dptTime ? dptTime.split(',')[1] : '',
@@ -1763,7 +2104,7 @@ export default class EditCapacityRelease extends Component {
         if (data.remark) {  // 其他说明字数
             textNum = data.remark.length;
         }
-        let { dpt = '', pst = '', arrv = '', dptNm = '', pstNm = '', arrvNm = '', quoteType = '', quotedPrice = '' } = data.responsePlans[0];
+        let { dpt = '', pst = '', arrv = '', dptNm = '', pstNm = '', arrvNm = '', quoteType = '', quotedPrice = '', pstAreaType } = data.responsePlans[0];
 
         let showPassInput = false;
         if (pst || arrv) {
@@ -1774,14 +2115,26 @@ export default class EditCapacityRelease extends Component {
 
         let designRadioValue = 1;
         if (pst) {
-            if (pst == targetPoint) {
-                designRadioValue = 2;
-            } else {
+            // designRadioValue = 2;
+            if (demandPlan.pstMandatoryDesignation == '1' && demandPlan.mandatoryDesignation == '1') {
                 designRadioValue = 3;
+            } else if (demandPlan.pstMandatoryDesignation == '1') {
+                designRadioValue = 2;
+            } else if (demandPlan.mandatoryDesignation == '1' && demandPlan.pstMandatoryDesignation=='0') {
+                designRadioValue = 2
+            } else if (demandPlan.mandatoryDesignation == '1') {
+                designRadioValue = 3
+            } else {
+                designRadioValue = 2;
             }
         } else {
             designRadioValue = 1;
         }
+        this.setState({
+            designRadioValue,
+        }, () => {
+            this.bindAreaType()
+        })
         this.setState({
             editType,
             designRadioValue: designRadioValue,//初始化直飞或者经停
@@ -1823,37 +2176,146 @@ export default class EditCapacityRelease extends Component {
             // group_pst: { pst, pstNm, pstLevel, pstEnter },
             // group_pstBack: { pst, pstNm, pstBackLevel, pstBackEnter },
             // group_arrv: { arrv, arrvNm, arrvLevel, arrvEnter },
+        }, () => {
+            console.log(this.state.designRadioValue)
+            this.stopLoading();
         })
     }
     mountTime = (time) => {
         if (time) {
             return moment(time, 'hh/mm')
         }
-        return '';
+        return null;
     };
     setDpt(data) {  // 机场设置始发、意向航点
         let myDpt = data.releaseDemandPoint,
             myDptNm = data.releaseDemandPointNm,
             myCode = data.targetPoint,
-            myName = data.targetPointNm;
+            myName = data.targetPointNm,
+            demandPlan = data.demandPlan;
+        let searchText2,
+            searchText2Bus,
+            dpt,
+            searchText3,
+            searchText3Bus,
+            pst,
+            searchText4,
+            searchText4Bus,
+            arrv;
+        let qiangzhiPst,
+            qiangzhiArrv;
+        let mandatoryDesignation = demandPlan.mandatoryDesignation;  // 目标航点或甩飞航点是否强制指定（0-否，1-是）
+        let pstMandatoryDesignation = demandPlan.pstMandatoryDesignation; // 经停点是否强制指定（0-否，1-是）
+        let pstAreaType = demandPlan.pstAreaType;  // 经停航点类型（1-机场三字码，2-省份，3区域）
+        let areaType = demandPlan.areaType;  // 甩飞或目标航点类型（1-机场三字码，2-省份，3区域）
+        let showPassInput = false;
+        let designRadioValue = 1;  // 航路设计1:直飞，2：经停，3：甩飞
+        let designRadioDisable = false;  // 航路设计是否禁止选中
+        let arrvProOrArea,
+            pstProOrArea;
+
         if (myDpt == myCode) {
             myCode = '';
             myName = '';
         }
+        searchText2 = myDptNm;  // 始发
+        searchText2Bus = myDptNm;
+        dpt = myDpt;
+        searchText3 = '';  // 经停输入框文字
+        searchText3Bus = '';  // 经停输入框存储
+        pst = '';  // 经停三字码
+        searchText4 = myName;
+        searchText4Bus = myName;
+        arrv = myCode;
+        if (demandPlan.routeType === '0') {  // 航线类型：0-直飞，1-经停，2-甩飞
+            if (mandatoryDesignation == 1) {
+                if (areaType == 1) {  //机场
+                    searchText4 = demandPlan.arrvNm;
+                    searchText4Bus = demandPlan.arrvNm;
+                    arrv = demandPlan.arrv;
+                    qiangzhiArrv = demandPlan.arrv;  // 强制执行-到达三字码
+                } else {  // 省份、区域
+                    searchText4 = '';
+                    searchText4Bus = '';
+                    arrv = '';
+                    arrvProOrArea = demandPlan.arrv;
+                }
+                designRadioDisable = true;
+            }
+        } else {
+            if (pstMandatoryDesignation == 1) {  // 强制执行-经停
+                if (pstAreaType == 1) {  //机场
+                    searchText3 = demandPlan.pstNm;  // 经停输入框文字
+                    searchText3Bus = demandPlan.pstNm;  // 经停输入框存储
+                    pst = demandPlan.pst;  // 经停三字码
+                    qiangzhiPst = demandPlan.pst; // 强制执行-经停三字码
+                    if (qiangzhiPst == myCode) {  // TODO:9.20新增
+                        myCode = '';
+                        myName = '';
+                        searchText4 = myName;
+                        searchText4Bus = myName;
+                        arrv = myCode;
+                    }
+                } else {  // 省份、区域
+                    searchText3 = '';  // 经停输入框文字
+                    searchText3Bus = '';  // 经停输入框存储
+                    pst = '';  // 经停三字码
+                    pstProOrArea = demandPlan.pst;
+                }
+                showPassInput = true;
+                designRadioValue = 2;
+                designRadioDisable = true;
+            }
+            if (mandatoryDesignation == 1) {  // 强制执行-甩飞
+                if (areaType == 1) {  //机场
+                    searchText4 = demandPlan.arrvNm;
+                    searchText4Bus = demandPlan.arrvNm;
+                    arrv = demandPlan.arrv;
+                    qiangzhiArrv = demandPlan.arrv;  // 强制执行-到达三字码
+                    if (qiangzhiArrv == myCode) {  // TODO:9.20新增
+                        myCode = '';
+                        myName = '';
+                        searchText3 = myName;
+                        searchText3Bus = myName;
+                        pst = myCode;
+                    }
+                } else {  // 省份、区域
+                    searchText4 = '';
+                    searchText4Bus = '';
+                    arrv = '';
+                    arrvProOrArea = demandPlan.arrv;
+                }
+                showPassInput = true;
+                designRadioValue = 2;
+                designRadioDisable = true;
+            }
+        }
         this.setState({
+            qiangzhiPst,
+            qiangzhiArrv,
+            arrvProOrArea,
+            pstProOrArea,
+            // designRadioDisable,
+            demandPlan,  // 8.16 zeng
+            mandatoryDesignation,  // 8.16 zeng
+            pstMandatoryDesignation,  // 8.16 zeng
+            pstAreaType,  // 8.16 zeng
+            areaType,  // 8.16 zeng
+            showPassInput,  // 8.16 zeng
+            designRadioValue,  // 8.16 zeng
             myDpt,
             myDptNm,
             myCode,
             myName,
-            searchText3: '',  // 经停输入框文字
-            searchText3Bus: '',  // 经停输入框存储
-            pst: '',  // 经停三字码
-            searchText2: myDptNm,  // 始发
-            searchText2Bus: myDptNm,
-            dpt: myDpt,
-            searchText4: myName,
-            searchText4Bus: myName,
-            arrv: myCode,
+            searchText2,  // 始发
+            searchText2Bus,
+            dpt,
+            searchText3,  // 经停输入框文字
+            searchText3Bus,  // 经停输入框存储
+            pst,  // 经停三字码
+            searchText4,
+            searchText4Bus,
+            arrv,
         })
     }
     responseData() {  // 数据绑定
@@ -1915,7 +2377,7 @@ export default class EditCapacityRelease extends Component {
                             date,
                             periodValidity: response.data.periodValidity,
                             sailingtime,
-                        }, ()=>{
+                        }, () => {
                             this.changeEvent(this.state.sailingtime)
                         })
                     } catch (e) {
@@ -1958,6 +2420,7 @@ export default class EditCapacityRelease extends Component {
                     'Content-type': 'application/json;charset=utf-8'
                 }
             }).then((response) => {
+                this.setDpt(response.data);
                 if (Number(response.data.opResult) === 0) {  // 查询成功-方案存在
                     this.initEdit3(editType, response.data)
                 } else if (Number(response.data.opResult) === 1) {  // 查询成功-用户还没有该需求下的意向
@@ -1980,6 +2443,7 @@ export default class EditCapacityRelease extends Component {
                     'Content-type': 'application/json;charset=utf-8'
                 }
             }).then((response) => {
+                this.setDpt(response.data);
                 if (Number(response.data.opResult) === 0) {  // 查询成功-方案存在
                     this.initEdit3(editType, response.data)
                 } else if (Number(response.data.opResult) === 1) {  // 查询成功-用户还没有该需求下的意向
@@ -2098,9 +2562,12 @@ export default class EditCapacityRelease extends Component {
                 showAirportSearch4: false,  // 到达是否显示
             })
         });
+        this.bindAreaType();
+        console.log('初次绑定')
     }
     componentWillUnmount() {
         emitter.removeEventListener(this.closeFloatingLayer);
+        // this.startLoading();
     }
     // 用户操作按钮
     btnEle = () => {
@@ -2125,7 +2592,7 @@ export default class EditCapacityRelease extends Component {
                     otherText="修改中"
                     isDisable={this.state.noMsgXiugai}
                     styleJson={{ width: "250px", padding: '0' }}
-                    onClick={() => { this.setState({ visible_reEdit: true }) }} />
+                    onClick={this.sendData2Fn.bind(this)} />
                 /*<div className={'btn-b'} style={{ width: '250px' }}
                     onClick={this.sendData2Fn.bind(this)}>确认修改航线方案</div>*/
             )
@@ -2158,28 +2625,7 @@ export default class EditCapacityRelease extends Component {
         }
     }
 
-    // 数据验证
-    verifyForm = (form) => {
-        let editType = this.props.popupMes.transmit.editType;
-        let msg = this.state.msg;
 
-        if (this.state.designRadioValue == 1) {//当为直飞的时候,经停点为true
-            msg.pst = true;
-            msg.pstEnter = true;
-            msg.pstLevel = true;
-            msg.pstBackLevel = true;
-            msg.pstBackEnter = true;
-        }
-        let count = Object.keys(msg).length;
-        if (msg) {
-            for (let m in msg) {
-                if (msg[m]) {
-                    count--
-                }
-            }
-        }
-        return count == 0 ? true : false;
-    }
     // 隐藏对话框
     hideModal = () => {
         this.setState({
@@ -2189,7 +2635,7 @@ export default class EditCapacityRelease extends Component {
             visible_afterAffirmReEdit: false,
         });
     }
-    
+
     // 显示支付组件
     showPay = () => {
         this.setState(() => {
@@ -2241,7 +2687,7 @@ export default class EditCapacityRelease extends Component {
                 }
             })
         } else {
-            console.log('验证不通过', this.state)
+            // console.log('验证不通过', this.state)
         }
     }
     //响应提交方案 关闭二次确认框
@@ -2295,7 +2741,7 @@ export default class EditCapacityRelease extends Component {
             contact: this.state.contact,//联系人
             ihome: this.state.ihome,//移动电话
             responsePlans: responsePlans,
-            performShift:this.state.performShift,//计划执行班次
+            performShift: this.state.performShift,//计划执行班次
 
         }
         if (editType === 3) {
@@ -2341,7 +2787,7 @@ export default class EditCapacityRelease extends Component {
                 }
             })
         } else {
-            console.log('验证不通过', this.state)
+            // console.log('验证不通过', this.state)
         }
     }
 
@@ -2450,7 +2896,7 @@ export default class EditCapacityRelease extends Component {
                         this.success('修改成功！');
                         this.closeFormBox();
                     } else {
-                        this.info('此方案状态有变,不可修改,请刷新');
+                        this.error('此方案状态有变,不可修改,请刷新');
                         // this.error('修改失败！');
                         this.closeFormBox();
                     }
@@ -2578,95 +3024,133 @@ export default class EditCapacityRelease extends Component {
 
     // 联系人检查
     checkContact = (name) => {
-        let bool, tip, msg = this.state.msg;
-        if (this.state.contact == '') {
-            tip = '联系人不能为空';
-            bool = false;
-        } else {
-            tip = '';
-            bool = true;
+        let { editType } = this.state;
+        // if (editType != 3 || editType != 4) {
+        //     return '';
+        // }
+        if (editType == 3 || editType == 4) {
+            let bool, tip, msg = this.state.msg;
+            if (this.state.contact == '') {
+                tip = '联系人不能为空';
+                bool = false;
+            } else {
+                tip = '';
+                bool = true;
+            }
+            msg[name] = bool;
+            this.setState(() => {
+                msg
+            })
+            return this.state.isInit == 1 ? '' : tip;
         }
-        msg[name] = bool;
-        this.setState(() => {
-            msg
-        })
-        return this.state.isInit == 1 ? '' : tip;
     }
     // 联系电话检查
     checkIHome = (name) => {
-        let bool, tip, msg = this.state.msg;
-        if (this.state.ihome == '') {
-            tip = '联系电话不能为空';
-            bool = false;
-        } else {
-            tip = '';
-            bool = true;
+        let { editType } = this.state;
+        // if (editType != 3 || editType != 4) {
+        //     return '';
+        // }
+        if (editType == 3 || editType == 4) {
+            let bool, tip, msg = this.state.msg;
+            if (this.state.ihome == '') {
+                tip = '联系电话不能为空';
+                bool = false;
+            } else {
+                tip = '';
+                bool = true;
+            }
+            msg[name] = bool;
+            this.setState(() => {
+                msg
+            })
+            return this.state.isInit == 1 ? '' : tip;
         }
-        msg[name] = bool;
-        this.setState(() => {
-            msg
-        })
-        return this.state.isInit == 1 ? '' : tip;
     }
     checkDate = (name) => {
-        let bool, tip, msg = this.state.msg, date = this.state.date;
-        let count = date.length;
-        for (let i = 0; i < date.length; i++) {
-            if (date[i].type == false) {
-                count -= 1;
+        let { editType } = this.state;
+        // if (editType != 3 || editType != 4) {
+        //     return '';
+        // }
+        if (editType == 3 || editType == 4) {
+            let bool, tip, msg = this.state.msg, date = this.state.date;
+            let count = date.length;
+            for (let i = 0; i < date.length; i++) {
+                if (date[i].type == false) {
+                    count -= 1;
+                }
             }
+            tip = count == 0 ? '请至少选择一天班期' : '';
+            bool = count == 0 ? false : true;
+            msg[name] = bool;
+            this.setState(() => {
+                msg
+            })
+            return this.state.isInit == 1 ? '' : tip;
         }
-        tip = count == 0 ? '请至少选择一天班期' : '';
-        bool = count == 0 ? false : true;
-        msg[name] = bool;
-        this.setState(() => {
-            msg
-        })
-        return this.state.isInit == 1 ? '' : tip;
     }
     // 合作方式检查
     checkPrice = (name) => {
-        let bool, tip;
-        let { msg, quoteType, quotedPrice } = this.state;
-        if (quoteType == '' || quoteType === null) {
-            tip = '请选择合作方式'; bool = false;
-        } else if ((quoteType === '1' || quoteType === '2') && (quotedPrice === '' || quotedPrice == null)) {
-            tip = '请输入价格'; bool = false;
-        } else if ((quoteType === '' || quoteType === null) && (quotedPrice === '' || quotedPrice == null)) {
-            tip = '请填写合作方式'; bool = false;
-        } else {
-            if (quoteType === '0') {
-                tip = ''; bool = true;
-            } else if (quoteType === '1' || quoteType === '2') {
-                let fixedSubsidyPriceReg = /^(?:0|[1-9]\d{0,2})(?:\.\d{1,2})?$/;
-                if (fixedSubsidyPriceReg.test(this.state.quotedPrice) && this.state.quotedPrice != 0) {
-                    tip = ''; bool = true;
-                } else {
-                    tip = '请输入正确的价格'; bool = false;
-                }
+        let { editType } = this.state;
+        // if (editType != 3 || editType != 4) {
+        //     return '';
+        // }
+        if (editType == 3 || editType == 4) {
+            let bool, tip;
+            let { msg, quoteType, quotedPrice } = this.state;
+            if (quoteType == '' || quoteType === null) {
+                tip = '请选择合作方式'; bool = false;
+            } else if ((quoteType === '1' || quoteType === '2') && (quotedPrice === '' || quotedPrice == null)) {
+                tip = '请输入价格'; bool = false;
+            } else if ((quoteType === '' || quoteType === null) && (quotedPrice === '' || quotedPrice == null)) {
+                tip = '请填写合作方式'; bool = false;
             } else {
-                tip = '请刷新页面'; bool = false;
+                if (quoteType === '0') {
+                    tip = ''; bool = true;
+                } else if (quoteType === '1' || quoteType === '2') {
+                    let fixedSubsidyPriceReg = /^(?:0|[1-9]\d{0,2})(?:\.\d{1,2})?$/;
+                    if (fixedSubsidyPriceReg.test(this.state.quotedPrice) && this.state.quotedPrice != 0) {
+                        tip = ''; bool = true;
+                    } else {
+                        tip = '请输入正确的价格'; bool = false;
+                    }
+                } else {
+                    tip = '请刷新页面'; bool = false;
+                }
             }
+            msg[name] = bool;
+            this.setState(() => {
+                msg
+            })
+            return this.state.isInit == 1 ? '' : tip;
         }
-        msg[name] = bool;
-        this.setState(() => {
-            msg
-        })
-        return this.state.isInit == 1 ? '' : tip;
     }
     // 检查时刻
     checkTime = (name) => {
-        let bool, tip, msg = this.state.msg;
-        if (this.state.isInit == 0 && this.state[name] == '') {
-            tip = '* 时刻不可为空';
-            bool = false;
-        } else if (this.state.isInit == 1 && this.state[name] == '') {
-            tip = '';
-            bool = false;
-        } else {
-            tip = '';
-            bool = true;
+        let { editType } = this.state;
+        // if (editType != 3 || editType != 4) {
+        //     return '';
+        // }
+        if (editType == 3 || editType == 4) {
+            let bool, tip, msg = this.state.msg;
+            if (this.state.isInit == 0 && this.state[name] == '') {
+                tip = '* 时刻不可为空';
+                bool = false;
+            } else if (this.state.isInit == 1 && this.state[name] == '') {
+                tip = '';
+                bool = false;
+            } else {
+                tip = '';
+                bool = true;
+            }
+            msg[name] = bool;
+            this.setState(() => {
+                msg
+            })
+            return this.state.isInit == 1 ? '' : tip;
         }
+    }
+    returnCheckAirpointResult(name, bool, tip) {
+        let { msg } = this.state;
         msg[name] = bool;
         this.setState(() => {
             msg
@@ -2675,48 +3159,137 @@ export default class EditCapacityRelease extends Component {
     }
     // 检查航点
     checkAirPoint = (name) => {
-        let bool, tip;
-        let releaseDemandPoint = this.state.releaseDemandPoint || '';
-        let releaseDemandPointNm = this.state.releaseDemandPointNm || '';
-        let targetPoint = this.state.targetPoint || '';
-        let targetPointNm = this.state.targetPointNm || '';
-        let arr = [releaseDemandPoint, targetPoint];
-        let msg = this.state.msg,
-            dpt = this.state.dpt,
-            pst = this.state.pst,
-            arrv = this.state.arrv,
-            designRadioValue = this.state.designRadioValue;
+        let currReturnCheckAirpointResult = this.returnCheckAirpointResult.bind(this, name);
+        let { editType } = this.state;
+        // if (editType != 3 || editType != 4) {
+        //     return '';
+        // }
+        if (editType == 3 || editType == 4) {
+            let bool = false, tip = '错误';
+            let { demandPlan = {}, msg, targetPoint, targetPointNm, dpt, pst, arrv, designRadioValue } = this.state;
+            let {
+                dpt: demand_dpt,
+                dptNm: demand_dptNm,
+                pst: demand_pst,
+                pstNm: demand_pstNm,
+                arrv: demand_arrv,
+                arrvNm: demand_arrvNm,
+                pstMandatoryDesignation,//string 经停强制
+                mandatoryDesignation,//string 到达强制
+                areaType,//string 甩飞或目标航点类型（1-机场三字码，2-省份，3区域）
+                pstAreaType,//string 经停航点类型（1-机场三字码，2 - 省份，3区域）
+            } = demandPlan;
+            let airline = 0;//0直飞,1经停
+            if (demand_pst) {
+                airline = 1;
+            }
 
-        if (dpt == '' || arrv == '' || (pst == '' && designRadioValue != 1)) {
-            tip = '请输入航点'; bool = false;
-        } else if (dpt != releaseDemandPoint) {
-            tip = '始发必须为' + releaseDemandPointNm;
-        } else {
-            if (releaseDemandPoint == targetPoint) {
-                tip = ''; bool = true;
+            // 此表单直飞经停甩飞123,航司响应表单直飞经停甩飞012,但逻辑相同,遂减一
+            designRadioValue -= 1;
+
+            if (dpt == '') {
+                bool = false; tip = '始发航点不能为空';
+                return currReturnCheckAirpointResult(bool, tip);
+            } else if (dpt != demand_dpt) {
+                bool = false; tip = '始发航点必须为' + demand_dptNm;
+                return currReturnCheckAirpointResult(bool, tip);
             } else {
-                if (designRadioValue == 2) {//经停
-                    if (pst == targetPoint) {
-                        tip = ''; bool = true;
-                    } else {
-                        tip = '经停必须为' + targetPointNm; bool = false;
+                if (pst == '' && designRadioValue != 0) { //当不为直飞时经停航点不能为空
+                    bool = false; tip = '经停航点不能为空';
+                    return currReturnCheckAirpointResult(bool, tip);
+                } else if (arrv == '') {
+                    bool = false; tip = '到达航点不能为空';
+                    return currReturnCheckAirpointResult(bool, tip);
+                } else if (dpt == targetPoint || pst == targetPoint || arrv == targetPoint) {//航点中必定包含了本场
+
+                    // if (designRadioValue == 0) {
+                    //     if (arrv == targetPoint || dpt == targetPoint) {
+                    //         bool = true; tip = '';
+                    //     } else {
+                    //         bool = false; tip = '请填写符合航司要求的方案'
+                    //     }
+                    //     // 不满足条件
+                    //     if (!bool) {
+                    //         return currReturnCheckAirpointResult(bool, tip);
+                    //     }
+                    // }
+                    // if (designRadioValue == 1) {
+                    //     if (pst == targetPoint || dpt == targetPoint || arrv==targetPoint) {
+                    //         bool = true; tip = '';
+                    //     } else {
+                    //         bool = false; tip = '请填写符合航司要求的方案'
+                    //     }
+                    //     // 不满足条件
+                    //     if (!bool) {
+                    //         return currReturnCheckAirpointResult(bool, tip);
+                    //     }
+                    // }
+                    // if (designRadioValue == 2) {
+                    //     if (arrv == targetPoint || dpt == targetPoint || pst == targetPoint) {
+                    //         bool = true; tip = '';
+                    //     } else {
+                    //         bool = false; tip = '请填写符合航司要求的方案'
+                    //     }
+                    //     // 不满足条件
+                    //     if (!bool) {
+                    //         return currReturnCheckAirpointResult(bool, tip);
+                    //     }
+                    // } else {
+                    //     // 不满足条件
+
+                    // }
+                    if (mandatoryDesignation == '1') {//强制到达
+                        if (airline === 0) { //需求直飞
+                            if (areaType == '1') {//航点
+                                if ((designRadioValue == 0 && arrv == demand_arrv) || (designRadioValue != 0 && pst == demand_arrv)) {//强制点必须为 需求强制点
+                                    bool = true; tip = '';
+                                } else {
+                                    bool = false; tip = '请填写符合航司要求的方案';
+                                }
+                            } else {//非航点
+                                bool = true; tip = '';
+                            }
+                        } else { //需求经停
+                            if (areaType == '1') {//航点
+                                if ((arrv == demand_arrv) && pst) {
+                                    bool = true; tip = '';
+                                } else {
+                                    bool = false; tip = '请填写符合航司要求的方案';
+                                }
+                            } else {//非航点
+                                bool = true; tip = '';
+                            }
+                        }
+                        // 不满足条件
+                        if (!bool) {
+                            return currReturnCheckAirpointResult(bool, tip);
+                        }
                     }
-                } else if (designRadioValue == 3) {
-                    if (arrv == targetPoint) {
-                        tip = ''; bool = true;
-                    } else {
-                        tip = '到达必须为' + targetPointNm; bool = true;
+                    if (pstMandatoryDesignation == '1') {
+                        if (pstAreaType == '1') {
+                            if (designRadioValue != 0 && pst == demand_pst) {
+                                bool = true; tip = '';
+                            } else {
+                                bool = false; tip = '请填写符合航司要求的方案';
+                            }
+                        } else {
+                            bool = true; tip = '';
+                        }
+                        // 不满足条件
+                        if (!bool) {
+                            return currReturnCheckAirpointResult(bool, tip);
+                        }
                     }
+                    return currReturnCheckAirpointResult(true, '');
+
                 } else {
-                    tip = ''; bool = true;
+                    bool = false; tip = '请包含' + targetPointNm;
+                    return currReturnCheckAirpointResult(bool, tip);
                 }
+
+
             }
         }
-        msg[name] = bool;
-        this.setState(() => {
-            msg
-        })
-        return this.state.isInit == 1 ? '' : tip;
     };
     quoteNumText(n) { // 1-定补，2-保底
         switch (n) {
@@ -2751,6 +3324,7 @@ export default class EditCapacityRelease extends Component {
             top: '40px',
             left: '-10px',
             maxHeight: '220px',
+            width: '220px',
             overflowY: 'scroll',
             background: 'white',
             zIndex: 22,
@@ -2790,7 +3364,7 @@ export default class EditCapacityRelease extends Component {
                                     </div>
                                 </div>
                             </div>
-                            <div className={styles['border']}></div>
+                            <div className={styles['border']} style={{ marginLeft: '25px' }}></div>
                             <div style={{ width: '130px', paddingLeft: '25px', boxSizing: 'border-box' }}>
                                 <div className={styles['marginBottom']}>报价</div>
                                 <div className={`${styles['bold']} ${styles['text-height']}`}>
@@ -2840,6 +3414,10 @@ export default class EditCapacityRelease extends Component {
         let daysWarn = <div style={{ position: 'absolute', top: '40px', left: '0', color: 'red' }}>
             请选择拟开班期！
         </div>;
+        // 强制执行-机场警告
+        let airlineQiangzhiWarn = <div style={{ position: 'absolute', top: '40px', left: '0', color: 'red' }}>
+            请提交符合该航司要求的方案！
+        </div>;
         // 始发、经停、到达警告
         let airlineWarn = <div style={{ position: 'absolute', top: '40px', left: '0', color: 'red' }}>
             必须同时含有本机场和始发航点！
@@ -2847,6 +3425,9 @@ export default class EditCapacityRelease extends Component {
         // 始发、经停、到达警告
         let airline2Warn = <div style={{ position: 'absolute', top: '40px', left: '0', color: 'red' }}>
             请填写始发和到达机场！
+        </div>;
+        let airline3Warn = <div style={{ position: 'absolute', top: '40px', left: '0', color: 'red' }}>
+            始发航点必须为始发机场！
         </div>;
         // 为经停、甩飞时三个输入框必须全填的警告
         let airline1Warn = <div style={{ position: 'absolute', top: '40px', left: '0', color: 'red' }}>
@@ -2899,6 +3480,9 @@ export default class EditCapacityRelease extends Component {
                     {
                         this.state.showAirportSearch3 && <AirportSearch
                             axis={axis}
+                            qiangzhizhixing={this.state.pstMandatoryDesignation}
+                            areaType={this.state.pstAreaType}
+                            provinceOrArea={this.state.pstProOrArea}
                             resData={this.airportData3.bind(this)}
                             searchText={this.state.searchText3} />
                     }
@@ -2939,12 +3523,18 @@ export default class EditCapacityRelease extends Component {
                 resData={this.airportData4.bind(this)}
                 searchText={this.state.searchText4 || ''} />;
         return (
-            <div style={{ position: 'relative', width: '780px', height: '840px' }}>
+            <div className={styles['new-demand-screen-change']}>
                 {
-                    <Confirmations title={'方案编辑'} subTitle={'确认修改该方案'} tipText={''} visible={this.state.visible_reEdit} onOk={this.sendData2Fn.bind(this)} onCancel={() => { this.setState({ visible_reEdit: false }) }} uploading={this.state.uploading} />
+                    <Confirmations title={'方案编辑'} subTitle={'确认修改该方案'} tipText={''} visible={this.state.visible_reEdit} onOk={this.sendData3Fn.bind(this)} onCancel={() => { this.setState({ visible_reEdit: false }) }} uploading={this.state.uploading} />
                 }
+                {
+                    this.state.isLoading && (editType === 3 || editType === 4) ? <div style={{ height: '100%', width: '100%', position: 'absolute', background: 'rgba(0,0,0,0)', zIndex: 10, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Spin tip='loading...' />
+                    </div> : ''
+                }
+
                 <div className={`scroll ${styles['airline-need']}`}
-                    style={{ height: '760px' }}
+                    style={{ top: '0', height: '100%' }}
                     ref="myRef">
                     <h2>您想如何使用该运力?</h2>
                     <span className={`${'iconfont'} ${styles['closeIcon']}`}
@@ -2989,16 +3579,16 @@ export default class EditCapacityRelease extends Component {
                                         className={styles['flex']}
                                         defaultValue={1}
                                         value={this.state.designRadioValue}
-                                        onChange={this.designRadioChangeFn.bind(this)}>
+                                        disabled={this.state.designRadioDisable}
+                                        onChange={this.designRadioChangeFn2.bind(this)}>
                                         <Radio value={1} style={{ fontSize: '1.2rem' }}>直飞</Radio>
                                         <Radio value={2} style={{ fontSize: '1.2rem' }}>经停</Radio>
                                         <Radio value={3} style={{ fontSize: '1.2rem' }}>甩飞</Radio>
                                     </RadioGroup>
                                 </div>
                                 {/* 确认选择方案 增加时刻 判断显示相应 */}
-                                {this.props.popupMes.transmit.editType === 3 || this.props.popupMes.transmit.editType === 4 ?
+                                {editType === 3 || editType === 4 ?
                                     (
-
                                         <div className={styles['time-con']}>
                                             <div className={styles['site-time-con']} style={{ justifyContent: this.getSiteTimeStyle }}>
                                                 <div className={styles['col-item']}>
@@ -3013,10 +3603,14 @@ export default class EditCapacityRelease extends Component {
                                                                 value={this.state.searchText2}
                                                                 onClick={(e) => { e.stopPropagation() }}
                                                                 onChange={this.searchTextChangeFn2.bind(this)}
-                                                                onFocus={this.inputClickFn2.bind(this)} />
+                                                                onFocus={this.inputClickFn2.bind(this)}
+                                                                placeholder={'请输入始发航点'} />
                                                             <div className={styles['drop-list']}>
                                                                 {
-                                                                    this.state.showAirportSearch2 && dptAirportSearch
+                                                                    this.state.showAirportSearch2 && <AirportSearch
+                                                                        axis={axis}
+                                                                        resData={this.airportData2.bind(this)}
+                                                                        searchText={this.state.searchText2} />
                                                                 }
                                                             </div>
                                                         </div>
@@ -3036,10 +3630,17 @@ export default class EditCapacityRelease extends Component {
                                                                     value={this.state.searchText3}
                                                                     onClick={(e) => { e.stopPropagation() }}
                                                                     onChange={this.searchTextChangeFn3.bind(this)}
-                                                                    onFocus={this.inputClickFn3.bind(this)} />
+                                                                    onFocus={this.inputClickFn3.bind(this)}
+                                                                    placeholder={'请输入经停航点'} />
                                                                 <div className={styles['drop-list']}>
                                                                     {
-                                                                        this.state.showAirportSearch3 && pstAirportSearch
+                                                                        this.state.showAirportSearch3 && <AirportSearch
+                                                                            axis={axis}
+                                                                            qiangzhizhixing={this.state.pstMandatoryDesignation}
+                                                                            areaType={this.state.pstAreaType}
+                                                                            provinceOrArea={this.state.pstProOrArea}
+                                                                            resData={this.airportData3.bind(this)}
+                                                                            searchText={this.state.searchText3} />
                                                                     }
                                                                 </div>
                                                             </div>
@@ -3058,15 +3659,40 @@ export default class EditCapacityRelease extends Component {
                                                                 value={this.state.searchText4}
                                                                 onClick={(e) => { e.stopPropagation() }}
                                                                 onChange={this.searchTextChangeFn4.bind(this)}
-                                                                onFocus={this.inputClickFn4.bind(this)} />
+                                                                onFocus={this.inputClickFn4.bind(this)}
+                                                                placeholder={'请输入到达航点'} />
                                                             <div className={styles['drop-list']}>
                                                                 {
-                                                                    this.state.showAirportSearch4 && arrvAirportSearch
+                                                                    this.state.showAirportSearch4 && <AirportSearch
+                                                                        axis={axis}
+                                                                        qiangzhizhixing={this.state.mandatoryDesignation}
+                                                                        areaType={this.state.areaType}
+                                                                        provinceOrArea={this.state.arrvProOrArea}
+                                                                        resData={this.airportData4.bind(this)}
+                                                                        searchText={this.state.searchText4} />
                                                                 }
                                                             </div>
                                                         </div>
                                                         <span className={styles['msg']}>
                                                             {this.checkAirPoint('point')}
+                                                            {
+                                                                this.state.airlineWarnShow && airlineWarn
+                                                            }
+                                                            {
+                                                                this.state.airlineQiangzhiWarnShow && airlineQiangzhiWarn
+                                                            }
+                                                            {
+                                                                this.state.airline1WarnShow && airline1Warn
+                                                            }
+                                                            {
+                                                                this.state.airline2WarnShow && airline2Warn
+                                                            }
+                                                            {
+                                                                this.state.airline3WarnShow && airline3Warn
+                                                            }
+                                                            {
+                                                                this.state.quoteWarnShow && quoteWarn
+                                                            }
                                                         </span>
                                                     </div>
                                                     {/**/}
@@ -3075,40 +3701,43 @@ export default class EditCapacityRelease extends Component {
                                             {/* 飞行时刻 */}
                                             <div className={styles['time-container']}>
                                                 {/* 始发时刻 */}
-                                                <div className={`${styles['time-col']} ${styles['time-line']}`}>
+                                                <div className={`${styles['time-col']}`}>
                                                     <div className={styles['time-box']}>
                                                         {/* 始发出港时刻 */}
                                                         <div className={`${styles['common-style']} ${styles['time-item']}`}>
                                                             <div>
-                                                                <span>出</span>
+                                                                <span className={styles['bgColorBlue']}>出</span>
                                                             </div>
                                                             <div>
                                                                 <span className={"ant-time-picker-icon"}></span>
                                                                 <div className={styles['drop-list-time']}>
                                                                     {/* <HourTimer showArrow={false} time={""} type={false} defaultTime={this.state.dptLevel} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'dptLevel')} /> */}
-                                                                    <TimePicker format={format} placeholder={""} onChange={this.dptLevel.bind(this)} value={this.mountTime(this.state.dptLevel)} />
+                                                                    <TimePicker format={format} placeholder={"请选择出港时刻"} onChange={this.dptLevel.bind(this)} value={this.mountTime(this.state.dptLevel)} />
 
                                                                 </div>
                                                             </div>
                                                             <span className={styles['msg']} >
                                                                 {this.checkTime('dptLevel')}
                                                             </span>
+                                                            <span className={styles['ident']} style={{ color: '#4172f4' }}>去程</span>
                                                         </div>
                                                         {/* 始发入港时刻 */}
                                                         <div className={`${styles['common-style']} ${styles['time-item']}`}>
                                                             <div>
-                                                                <span>进</span>
+                                                                <span className={styles['bgColorYellow']}>进</span>
                                                             </div>
                                                             <div>
                                                                 <span className={"ant-time-picker-icon"}></span>
                                                                 <div className={styles['drop-list-time']}>
                                                                     {/* <HourTimer showArrow={false} time={this.state.designRadioValue == 1 ? this.state.arrvLevel : this.state.pstBackLevel} type={false} defaultTime={this.state.dptEnter} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'dptEnter')} /> */}
-                                                                    <TimePicker format={format} placeholder={''} onChange={this.dptEnter.bind(this)} value={this.mountTime(this.state.dptEnter)} />
+                                                                    <TimePicker format={format} placeholder={'请选择进港时刻'} onChange={this.dptEnter.bind(this)} value={this.mountTime(this.state.dptEnter)}
+                                                                        disabled={this.state.designRadioValue == 1 ? (this.state.arrvLevel ? false : true) : (this.state.pstBackLevel ? false : true)} />
                                                                 </div>
                                                             </div>
                                                             <span className={styles['msg']}>
                                                                 {this.checkTime('dptEnter')}
                                                             </span>
+                                                            <span className={styles['ident']} style={{ color: '#ceac30' }}>返程</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -3126,13 +3755,13 @@ export default class EditCapacityRelease extends Component {
                                                                     {/* 经停入港时刻 */}
                                                                     <div className={`${styles['common-style']} ${styles['time-item']} ${styles['small-time-item']}`}>
                                                                         <div>
-                                                                            <span>进</span>
+                                                                            <span className={styles['bgColorBlue']}>进</span>
                                                                         </div>
                                                                         <div>
                                                                             <span className={"ant-time-picker-icon"}></span>
                                                                             <div className={styles['drop-list-time']}>
                                                                                 {/* <HourTimer showArrow={false} time={this.state.dptLevel} type={false} defaultTime={this.state.pstEnter} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'pstEnter')} /> */}
-                                                                                <TimePicker format={format} placeholder={''} onChange={this.pstEnter.bind(this)} value={this.mountTime(this.state.pstEnter)} />
+                                                                                <TimePicker format={format} placeholder={'进港时刻'} onChange={this.pstEnter.bind(this)} value={this.mountTime(this.state.pstEnter)} disabled={this.state.dptLevel ? false : true} />
                                                                             </div>
                                                                         </div>
                                                                         <span className={styles['msg']}>
@@ -3142,13 +3771,13 @@ export default class EditCapacityRelease extends Component {
                                                                     {/* 经停出港时刻 */}
                                                                     <div className={`${styles['common-style']} ${styles['time-item']} ${styles['small-time-item']}`}>
                                                                         <div>
-                                                                            <span>出</span>
+                                                                            <span className={styles['bgColorBlue']}>出</span>
                                                                         </div>
                                                                         <div>
                                                                             <span className={"ant-time-picker-icon"}></span>
                                                                             <div className={styles['drop-list-time']}>
                                                                                 {/* <HourTimer showArrow={false} time={this.state.pstEnter} type={false} defaultTime={this.state.pstLevel} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'pstLevel')} /> */}
-                                                                                <TimePicker format={format} placeholder={''} onChange={this.pstLevel.bind(this)} value={this.mountTime(this.state.pstLevel)} />
+                                                                                <TimePicker format={format} placeholder={'出港时刻'} onChange={this.pstLevel.bind(this)} value={this.mountTime(this.state.pstLevel)} disabled={this.state.pstEnter ? false : true} />
                                                                             </div>
                                                                         </div>
                                                                         <span className={styles['msg']}>
@@ -3168,13 +3797,13 @@ export default class EditCapacityRelease extends Component {
                                                                     {/* 返回经停出港时刻 */}
                                                                     <div className={`${styles['common-style']} ${styles['time-item']} ${styles['small-time-item']}`}>
                                                                         <div>
-                                                                            <span>出</span>
+                                                                            <span className={styles['bgColorYellow']}>出</span>
                                                                         </div>
                                                                         <div>
                                                                             <span className={"ant-time-picker-icon"}></span>
                                                                             <div className={styles['drop-list-time']}>
                                                                                 {/* <HourTimer showArrow={false} time={this.state.pstBackLevel} type={false} defaultTime={this.state.pstBackLevel} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'pstBackLevel')} /> */}
-                                                                                <TimePicker format={format} placeholder={''} onChange={this.pstBackLevel.bind(this)} value={this.mountTime(this.state.pstBackLevel)} />
+                                                                                <TimePicker format={format} placeholder={'出港时刻'} onChange={this.pstBackLevel.bind(this)} value={this.mountTime(this.state.pstBackLevel)} disabled={this.state.pstBackEnter ? false : true} />
                                                                             </div>
                                                                         </div>
                                                                         <span className={styles['msg']}>
@@ -3184,13 +3813,13 @@ export default class EditCapacityRelease extends Component {
                                                                     {/* 返回经停入港时刻 */}
                                                                     <div className={`${styles['common-style']} ${styles['time-item']} ${styles['small-time-item']}`}>
                                                                         <div>
-                                                                            <span>进</span>
+                                                                            <span className={styles['bgColorYellow']}>进</span>
                                                                         </div>
                                                                         <div>
                                                                             <span className={"ant-time-picker-icon"}></span>
                                                                             <div className={styles['drop-list-time']}>
                                                                                 {/* <HourTimer showArrow={false} time={this.state.arrvLevel} type={false} defaultTime={this.state.pstBackEnter} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'pstBackEnter')} /> */}
-                                                                                <TimePicker format={format} placeholder={''} onChange={this.pstBackEnter.bind(this)} value={this.mountTime(this.state.pstBackEnter)} />
+                                                                                <TimePicker format={format} placeholder={'进港时刻'} onChange={this.pstBackEnter.bind(this)} value={this.mountTime(this.state.pstBackEnter)} disabled={this.state.arrvLevel ? false : true} />
                                                                             </div>
                                                                         </div>
                                                                         <span className={styles['msg']}>
@@ -3227,14 +3856,14 @@ export default class EditCapacityRelease extends Component {
                                                         {/* 到达入港时刻 */}
                                                         <div className={`${styles['common-style']} ${styles['time-item']}`}>
                                                             <div>
-                                                                <span>进</span>
+                                                                <span className={styles['bgColorBlue']}>进</span>
                                                             </div>
                                                             <div>
                                                                 <input type="text" maxLength="20" />
                                                                 <span className={"ant-time-picker-icon"}></span>
                                                                 <div className={styles['drop-list-time']}>
                                                                     {/* <HourTimer showArrow={false} time={this.state.designRadioValue == 1 ? this.state.dptLevel : this.state.pstLevel} type={false} defaultTime={this.state.arrvEnter} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'arrvEnter')} /> */}
-                                                                    <TimePicker format={format} placeholder={""} onChange={this.arrvEnter.bind(this)} value={this.mountTime(this.state.arrvEnter)} />
+                                                                    <TimePicker format={format} placeholder={'请选择进港时刻'} onChange={this.arrvEnter.bind(this)} value={this.mountTime(this.state.arrvEnter)} disabled={this.state.designRadioValue == 1 ? (this.state.dptLevel ? false : true) : (this.state.pstLevel ? false : true)} />
 
                                                                 </div>
                                                             </div>
@@ -3245,14 +3874,14 @@ export default class EditCapacityRelease extends Component {
                                                         {/* 到达出港时刻 */}
                                                         <div className={`${styles['common-style']} ${styles['time-item']}`}>
                                                             <div>
-                                                                <span>出</span>
+                                                                <span className={styles['bgColorYellow']}>出</span>
                                                             </div>
                                                             <div>
                                                                 <input type="text" maxLength="20" />
                                                                 <span className={"ant-time-picker-icon"}></span>
                                                                 <div className={styles['drop-list-time']}>
                                                                     {/* <HourTimer showArrow={false} time={this.state.arrvEnter} type={false} defaultTime={this.state.arrvLevel} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'arrvLevel')} /> */}
-                                                                    <TimePicker format={format} placeholder={''} onChange={this.arrvLevel.bind(this)} value={this.mountTime(this.state.arrvLevel)} />
+                                                                    <TimePicker format={format} placeholder={'请选择出港时刻'} onChange={this.arrvLevel.bind(this)} value={this.mountTime(this.state.arrvLevel)} disabled={this.state.arrvEnter ? false : true} />
                                                                 </div>
                                                             </div>
                                                             <span className={styles['msg']}>
@@ -3304,6 +3933,9 @@ export default class EditCapacityRelease extends Component {
                                                     {
                                                         this.state.showAirportSearch4 && <AirportSearch
                                                             axis={axis}
+                                                            qiangzhizhixing={this.state.mandatoryDesignation}
+                                                            areaType={this.state.areaType}
+                                                            provinceOrArea={this.state.arrvProOrArea}
                                                             resData={this.airportData4.bind(this)}
                                                             searchText={this.state.searchText4} />
                                                     }
@@ -3343,10 +3975,16 @@ export default class EditCapacityRelease extends Component {
                                                 this.state.airlineWarnShow && airlineWarn
                                             }
                                             {
+                                                this.state.airlineQiangzhiWarnShow && airlineQiangzhiWarn
+                                            }
+                                            {
                                                 this.state.airline1WarnShow && airline1Warn
                                             }
                                             {
                                                 this.state.airline2WarnShow && airline2Warn
+                                            }
+                                            {
+                                                this.state.airline3WarnShow && airline3Warn
                                             }
                                             {
                                                 this.state.quoteWarnShow && quoteWarn
@@ -3358,7 +3996,7 @@ export default class EditCapacityRelease extends Component {
                             </div>
                             {/* 当为选择方案的时候不显示 */}
                             {
-                                this.props.popupMes.transmit.editType === 3 || this.props.popupMes.transmit.editType === 4 ? '' : (
+                                editType === 3 || editType === 4 ? '' : (
                                     <div className={'scroll'} style={{ maxHeight: '420px', overflowY: 'scroll' }}>
                                         {
                                             (this.state.responsePlans != null
@@ -3383,7 +4021,7 @@ export default class EditCapacityRelease extends Component {
                                 </div>
                                 {/* 根据editType类型显示报价价格或有效期 */}
                                 {
-                                    this.props.popupMes.transmit.editType === 3 || this.props.popupMes.transmit.editType === 4 ?
+                                    editType === 3 || editType === 4 ?
                                         (
                                             <div className={styles['col-box']} style={{ position: 'relative', background: '#f6f6f6', padding: '5px' }}>
                                                 <div className={styles['col-text']} style={{ marginLeft: '7px', width: '40px' }}>报价</div>
@@ -3511,15 +4149,14 @@ export default class EditCapacityRelease extends Component {
                         position: 'absolute',
                         bottom: 0,
                         left: 0,
-                        width: '100%',
                         borderBottomRightRadius: '8px',
                         borderBottomLeftRadius: '8px',
                         boxShadow: '0 2px 11px rgba(85, 85, 85, 0.1)'
                     }}>
                     {
-                        (this.props.popupMes.transmit.editType === 2
-                            || this.props.popupMes.transmit.editType === 3
-                            || this.props.popupMes.transmit.editType === 4)
+                        (editType === 2
+                            || editType === 3
+                            || editType === 4)
                             ? ''
                             : <div style={{ padding: '0' }}>
                                 <Btn text='保存草稿'

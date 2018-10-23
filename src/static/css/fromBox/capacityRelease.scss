@@ -48,9 +48,11 @@
 .capacity-release-content{
   background-color: #ffffff;
   border-radius: 8px 8px 0 0;
+  padding-bottom: 113px;
   >div{
     margin: auto;
-    width: 500px;
+    width: 513px;
+    max-height: 760px;
   }
 }
 .capacity-release-content-name{
@@ -251,7 +253,7 @@
 .capacity-release-content-other{
   display: flex;
   justify-content: space-between;
-  margin-top:28px;
+  margin-top:20px;
   margin-bottom: 18px;
 }
 
@@ -559,4 +561,89 @@
 
 .hidden{
   display: none;
+}
+
+.testMargin{
+  margin-bottom: 20px;
+}
+
+.inOut{
+  width: 245px;
+  display: flex;
+  >div>div:nth-child(2){
+    margin-top: 17px;
+  }
+}
+
+.borderline{
+  height: 80px;
+}
+
+.arrv_time{
+    margin-top: 25px;
+}
+
+.point{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.contentTop{
+  display: flex;
+  justify-content: space-between;
+}
+
+.stopStyle{
+  line-height: 93px;
+}
+
+/*适配1366*/
+@media screen and (max-width: 1366px) {
+    .capacity-release-input-hover-fzz {
+        margin-left: 0;
+        width: 110px;
+    }
+    .airTypeBox-fzz {
+        left: -20px;
+        width: 150px;
+    }
+  .capacity-release{
+    width: 567px;
+  }
+  .capacity-release-content{
+    overflow-y: scroll;
+    overflow-x: hidden;
+    padding-bottom: 131px;
+    margin-bottom: 131px;
+    //height: 450px;
+  }
+  .capacity-release-content-button{
+    width: 567px;
+  }
+  .capacity-release-content-name{
+    font-size: 2rem;
+    padding-top: 30px;
+    margin-bottom: 29px;
+  }
+  .capacity-release-content-box{
+    height: 40px;
+  }
+  .testMargin{
+    //margin-bottom: 15px;
+  }
+  .inOut{
+    >div:nth-child(2){
+      margin-top: 6px;
+    }
+  }
+  .borderline{
+    height: 68px;
+  }
+  .ninth{
+    margin-bottom: 24px;
+  }
+  .arrv_time{
+    //margin-top: 10px;
+  }
 }

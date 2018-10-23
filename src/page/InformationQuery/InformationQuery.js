@@ -127,7 +127,7 @@ export default class InformationQuery extends Component{
     }
     render(){
         return(
-            <div className={`router-context ${style['bg-img']}`}>
+            <div className={`router-context ${style['bg-img']}`} style={{ overflowY: 'scroll' }}>
                 <div className={style['container']}>
                     <div className={style['item']}>
                         <div>

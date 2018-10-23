@@ -4,7 +4,8 @@
     flex:1;
     background: #ffffff;
 }*/
-.roleDemand{
+
+.roleDemand {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -58,64 +59,79 @@
             }
         }
     }*/
-    .demand-content{
-        flex:1;
+    .demand-content {
+        flex: 1;
         display: flex;
         flex-direction: column;
-        .demand-list{
-            flex:1;
-            // overflow: scroll;
+        .demand-list {
+            flex: 1; // overflow: scroll;
             display: flex;
             flex-direction: column;
         }
     }
 }
-.roleDemand-loading{
-    width: 100%;height: 200px;
+
+.roleDemand-loading {
+    width: 100%;
+    height: 200px;
     display: flex;
     justify-content: center;
     align-items: center;
 }
-.roleDemand-tip{
+
+.roleDemand-tip {
     display: block;
     height: 100px;
     line-height: 100px;
     text-align: center;
 }
-.demand-filtrate{
+
+.demand-filtrate {
     height: 50px;
     border-bottom: 1px solid #ddd;
-    display:flex;
-    justify-content: center;align-items:center;
-    .filtrate-con{
-        $fHeight:28px;
-        width: 80%;height: $fHeight;
-        border:1px solid #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .filtrate-con {
+        $fHeight: 28px;
+        width: 80%;
+        height: $fHeight;
+        border: 1px solid #ddd;
         border-radius: $fHeight;
         display: flex;
         flex-direction: row;
         overflow: hidden;
-        >div{
-            width: 50%;height: inherit;
+        >div {
+            width: 50%;
+            height: inherit;
             line-height: $fHeight;
             text-align: center;
             background: rgba(255, 255, 255, 1);
             color: #000;
             cursor: pointer;
-            &:hover{
+            &:hover {
                 background: rgba(255, 255, 255, 0.8);
             }
         }
-        .active{
-            background:rgba(117, 157, 253, 1);
+        .active {
+            background: rgba(117, 157, 253, 1);
             color: #fff;
-            &:hover{
-                background:rgba(117, 157, 253, 0.8);
+            &:hover {
+                background: rgba(117, 157, 253, 0.8);
             }
         }
     }
 }
-.roleDemand-body{
+
+.roleDemand-body {
     flex: 1;
     overflow-y: auto;
+    position: relative;
+    .content {
+        height: 100%; 
+        width:100%; 
+        position:absolute; 
+        top:0;
+        overflow-y:auto; 
+    }
 }

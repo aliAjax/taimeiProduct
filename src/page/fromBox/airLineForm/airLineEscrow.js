@@ -11,6 +11,7 @@ export default class AirLineEscrow extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            isSmall: false,
             noMsgFabu: false,  // 表单发布
             noMsgCaogao: false,  // 保存草稿按钮
             saveDraftId: '',  // 保存草稿成功后返回的id
@@ -147,6 +148,11 @@ export default class AirLineEscrow extends Component {
                     //TODO:请求需要渲染的数据，保存草稿：第一次--demandAdd，第二次--demandUpdate
                     if(this.state.saveDraftId != '' && this.state.saveDraftId != null) {
                         demand.id = this.state.saveDraftId;
+                        try{
+                            demand.releasetime = this.props.data.releasetime;
+                        }catch (e) {
+
+                        }
                         Axios({
                             method: 'post',
                             url: '/demandUpdate',
@@ -237,6 +243,11 @@ export default class AirLineEscrow extends Component {
                     //TODO:请求需要渲染的数据，保存草稿：第一次--demandAdd，第二次--demandUpdate
                     if(this.state.saveDraftId != '' && this.state.saveDraftId != null) {
                         demand.id = this.state.saveDraftId;
+                        try{
+                            demand.releasetime = this.props.data.releasetime;
+                        }catch (e) {
+
+                        }
                         Axios({
                             method: 'post',
                             url: '/demandUpdate',
@@ -347,7 +358,15 @@ export default class AirLineEscrow extends Component {
     }
     componentDidMount() {
         this.setDataFn(this.props.data);
+        let clientWidth = document.documentElement.clientWidth;  // 8.06 新增，1366分辨率下，样式改变
+        let isSmall = false;
+        if(clientWidth <= 1366) {
+            isSmall = true;
+        }else {
+            isSmall = false;
+        }
         this.setState({
+            isSmall,
             myHeight: document.body.clientHeight - 130,
             contact: store.getState().role.concat,  // 联系人
             iHome: store.getState().role.phone,  // 联系方式
@@ -377,11 +396,11 @@ export default class AirLineEscrow extends Component {
                 <span className={`${'iconfont'} ${styles['closeIcon']}`}
                       onClick={this.closeFn.bind(this)}>&#xe62c;</span>
                 <div className={`${styles['eighth']} ${styles['flex']}`}>
-                    <div className={styles['col-box']} style={{background: '#F6F6F6'}}>
+                    <div className={`${styles['col-box']} ${styles['screen-change-target']}`} style={{background: '#F6F6F6'}}>
                         <div className={styles['col-text']}>航班号</div>
                         <div className={styles['col-input']}>
                             <input type="text"
-                                   style={{width: '155px'}}
+                                   style={this.state.isSmall ? {width: '110px'} : {width: '155px'}}
                                    maxLength={'10'}
                                    placeholder={'请输入航班号'}
                                    value={this.state.fltNbr}
@@ -391,10 +410,11 @@ export default class AirLineEscrow extends Component {
                             }
                         </div>
                     </div>
-                    <div className={styles['col-box']} style={{background: '#F6F6F6'}}>
+                    <div className={`${styles['col-box']} ${styles['screen-change-target']}`} style={{background: '#F6F6F6'}}>
                         <div className={styles['col-text']}>联系人</div>
                         <div className={styles['col-input']}>
-                            <input type="text" style={{width: '155px'}}
+                            <input type="text"
+                                   style={this.state.isSmall ? {width: '110px'} : {width: '155px'}}
                                    value={this.state.contact}
                                    maxLength="20"
                                    onFocus={this.contactFocusFn.bind(this)}

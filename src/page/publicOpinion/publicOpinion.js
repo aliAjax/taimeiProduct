@@ -13,15 +13,16 @@ export default class PublicOpinion extends Component{
         super(props);
         this.state = {
             initText: false,
-            inputText: '',      // 模糊查询的文字
+            inputText: this.props.match.params.iata === 'null' ? "" : this.props.match.params.iata,      // 模糊查询的文字
+            codeType:this.props.match.params.codeType === 'null' ? 2 : this.props.match.params.codeType,      // 查询的类型
             totalLength: 10,   // 总条数
+            current:1,
             list: [],
             nopo:false,
             loading:false,   // 加载中
             oneTime:true
         }
     }
-
     componentWillMount(){  // 将要渲染
 
     }
@@ -72,7 +73,8 @@ export default class PublicOpinion extends Component{
     }
     resData(pageNumber = 1) {
         this.setState({
-            loading:true
+            loading:true,
+            current:pageNumber
         });
         Axios({
             method: 'post',
@@ -80,7 +82,7 @@ export default class PublicOpinion extends Component{
             params: {
                 code: this.state.inputText,
                 type: this.state.inputText == "" ? 1 : 0,
-                codeType: 2,
+                codeType: this.state.codeType,
                 page: pageNumber
             },
             headers: {
@@ -131,9 +133,9 @@ export default class PublicOpinion extends Component{
                                        <div className={style["item-nr"]}>
                                            <div className={style["item-title"]}>
                                                <h5><a href={key.src} target="_blank">{key.title}</a></h5>
-                                               <div className={style["item-class"]}>
-                                                   <span>舆情类型</span>
-                                               </div>
+                                               {/*<div className={style["item-class"]}>*/}
+                                                   {/*<span>舆情类型</span>*/}
+                                               {/*</div>*/}
                                            </div>
                                            <p>{key.text}</p>
                                            <div className={style["item-time"]}>
@@ -154,6 +156,7 @@ export default class PublicOpinion extends Component{
         return n;
     }
     search(){
+        this.state.codeType = 2;
         this.resData();
     }
     clearText(data){
@@ -174,7 +177,7 @@ export default class PublicOpinion extends Component{
                     <div className={style["box-head"]}>
                         <div><span className={style['box-head-icon']}>&#xe624;</span>新闻舆情</div>
                         <div className={style["opinion-search-box"]}>
-                            <input className={style["role-search-input"]} type="text" onBlur={this.clearText.bind(this)} maxLength="20" placeholder="请输入舆情关键词查询"/>
+                            <input className={style["role-search-input"]} defaultValue={this.state.inputText} type="text" onBlur={this.clearText.bind(this)} maxLength="20" placeholder="请输入舆情关键词查询"/>
                             <div className={style["role-search-btn"]}>
                                 <i className="iconfont" style={{color: "rgb(222, 226, 229)"}} onClick={this.search.bind(this)}>&#xe62e;</i>
                             </div>
@@ -189,6 +192,7 @@ export default class PublicOpinion extends Component{
                                 className={style['pagination-center']}
                                 showQuickJumper
                                 defaultCurrent={1}
+                                current={this.state.current}
                                 total={this.state.totalLength}
                                 onChange={this.resData.bind(this)}
                                 style={{marginBottom:"50px"}}

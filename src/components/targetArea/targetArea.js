@@ -10,19 +10,19 @@ export default class TargetArea extends Component {
             newList: [],//显示的下拉列表
             searchText: "",//正则匹配条件
             areaList: [//区域数据
-                { name: "华东地区", eName: "hddq", spell: "huadongdiqu" },
-                { name: "华中地区", eName: "hzdq", spell: "huazhongdiqu" },
-                { name: "华北地区", eName: "hbdq", spell: "huabeidiqu" },
-                { name: "华南地区", eName: "hndq", spell: "huanandiqu" },
-                { name: "东北地区", eName: "dbdq", spell: "dongbeidiqu" },
-                { name: "西北地区", eName: "xbdq", spell: "xibeidiqu" },
-                { name: "西南地区", eName: "xndq", spell: "xinandiqu" },//以上是大区
+                // { name: "华东地区", spell: "hddq", eName: "huadongdiqu" },
+                // { name: "华中地区", spell: "hzdq", eName: "huazhongdiqu" },
+                // { name: "华北地区", spell: "hbdq", eName: "huabeidiqu" },
+                // { name: "华南地区", spell: "hndq", eName: "huanandiqu" },
+                // { name: "东北地区", spell: "dbdq", eName: "dongbeidiqu" },
+                // { name: "西北地区", spell: "xbdq", eName: "xibeidiqu" },
+                // { name: "西南地区", spell: "xndq", eName: "xinandiqu" },//以上是大区
             ]
         }
     }
 
     componentWillMount() {
-        let areaList = this.state.areaList;
+        let areaList = this.props.allAreaList;
         // this.setState({
         //     newList: areaList
         // });
@@ -37,11 +37,11 @@ export default class TargetArea extends Component {
                 if (provinceReg.test(areaList[i].name)) {
                     regType = "";
                     newList.push(areaList[i])
-                } else if (provinceReg.test(areaList[i].eName)) {
-                    regType = "eName";
-                    newList.push(areaList[i])
                 } else if (provinceReg.test(areaList[i].spell)) {
                     regType = "spell";
+                    newList.push(areaList[i])
+                } else if (provinceReg.test(areaList[i].eName)) {
+                    regType = "eName";
                     newList.push(areaList[i])
                 }
             };
@@ -49,7 +49,8 @@ export default class TargetArea extends Component {
         this.setState({
             newList,
             regType,
-            searchText
+            searchText,
+            areaList
         })
     }
 
@@ -65,11 +66,11 @@ export default class TargetArea extends Component {
                 if (provinceReg.test(areaList[i].name)) {
                     regType = "";
                     newList.push(areaList[i])
-                } else if (provinceReg.test(areaList[i].eName)) {
-                    regType = "eName";
-                    newList.push(areaList[i])
                 } else if (provinceReg.test(areaList[i].spell)) {
                     regType = "spell";
+                    newList.push(areaList[i])
+                } else if (provinceReg.test(areaList[i].eName)) {
+                    regType = "eName";
                     newList.push(areaList[i])
                 }
             };
@@ -96,27 +97,27 @@ export default class TargetArea extends Component {
     render() {
         let newList = this.state.newList;
         let regType = this.state.regType;
-        let spellStyle, eNameStyle;
-        if (regType == "eName") {
+        let eNameStyle, spellStyle;
+        if (regType == "spell") {
+            eNameStyle = style['noShow']
+        } else if (regType == "eName") {
             spellStyle = style['noShow']
-        } else if (regType == "spell") {
-            eNameStyle = style['noShow']
         } else {
-            spellStyle = style['noShow'];
-            eNameStyle = style['noShow']
+            eNameStyle = style['noShow'];
+            spellStyle = style['noShow']
         }
         return (
             <div className={`scroll box-show`} style={this.props.axis}>
                 {
                     newList.map((item, index) => {
                         let styleSpan = "style='color: #3c78ff'";
-                        let spell = item.spell.replace(this.state.searchText, "<span " + styleSpan + ">" + this.state.searchText + "</span>");
                         let eName = item.eName.replace(this.state.searchText, "<span " + styleSpan + ">" + this.state.searchText + "</span>");
+                        let spell = item.spell.replace(this.state.searchText, "<span " + styleSpan + ">" + this.state.searchText + "</span>");
                         return (
                             <div className={style['indexBox']} key={index} onClick={this.click.bind(this, item.name)}>
                                 <div>{item.name}</div>
-                                <div className={spellStyle} dangerouslySetInnerHTML={{ __html: spell }}></div>
                                 <div className={eNameStyle} dangerouslySetInnerHTML={{ __html: eName }}></div>
+                                <div className={spellStyle} dangerouslySetInnerHTML={{ __html: spell }}></div>
                             </div>
                         )
                     })

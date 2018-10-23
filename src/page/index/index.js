@@ -59,7 +59,12 @@ export default class Index extends Component{
         let airList = new Promise(function (resolve, reject) {
             let at = sessionStorage.getItem("airList");
             if(at !== null){
-                resolve(JSON.parse(at));
+                try{
+                    let atData = JSON.parse(at);
+                    resolve(atData);
+                }catch (e) {
+                    console.log(e)
+                }
             };
             Axios({
                 method: 'post',
@@ -152,14 +157,14 @@ export default class Index extends Component{
                 //     iata: 'ctu'
                 // }
                 // emitter.emit('openPopup', {
-                //     popupType: 5,
+                //     popupType: 2,
                 //     popupMes: {
                 //         transmit,
                 //     }
                 // })
             });
         })
-        
+
     }
 
     renderStep(){
@@ -212,7 +217,7 @@ export default class Index extends Component{
                         <Route path="/informationQuery" component={InformationQuery}></Route>
                         <Route path="/timeDistribution" component={TimeDistribution}></Route>
                         <Route path="/timeDistributionAirport/:iata" component={TimeDistributionAirport}></Route>
-                        <Route path="/publicOpinion" component={PublicOpinion}></Route>
+                        <Route path="/publicOpinion/:iata/:codeType" component={PublicOpinion}></Route>
                         <Route path="/allAirport" component={AllAirport}></Route>
                         <Route path="/allAirline" component={AllAirline}></Route>
                         <Route path="/allCity" component={AllCity}></Route>

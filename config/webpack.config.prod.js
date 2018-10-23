@@ -350,11 +350,11 @@ module.exports = {
         new HtmlWebpackPlugin({
             inject: true,
             template: paths.appHtml,
-            filename:"E:\\workspace2\\hangyu_second\\src\\main\\webapp\\WEB-INF\\pages\\socket\\index.jsp",
+            filename:"E:\\gitWorkSpace\\hangyuJava\\src\\main\\webapp\\WEB-INF\\pages\\socket\\index.jsp",
             dats:"<%@ page language='java' contentType='text/html; charset=UTF-8'%><%@ page import=\"java.util.ResourceBundle\" %><%\n" +
             "    ResourceBundle resource = ResourceBundle.getBundle(\"application\");\n" +
             "%>" ,
-            version_numbe:"<script>var version_numbe = <%=resource.getString(\"version_numbe\")%></script>",
+            version_numbe:`<script>var version_numbe = <%=resource.getString("version_numbe")%>;var measure_url = <%=resource.getString("measure_url")%>;</script>`,
             minify: {
                 removeComments: true,
                 collapseWhitespace: true,

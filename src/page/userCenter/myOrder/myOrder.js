@@ -105,6 +105,7 @@ export default class MyIntention extends Component {
                     paginationType = false;
                 }
                 this.setState(() => ({
+                    page:1,
                     initData,
                     totalCount,
                     paginationType,
@@ -222,7 +223,6 @@ export default class MyIntention extends Component {
     choosePage(pageNumber) {
         let page = pageNumber;
         let orderType = this.state.orderType;
-        console.log(page)
         Axios({
             method: 'post',
             url: '/selectMyOrderList',

@@ -8,7 +8,6 @@ let airportList = null;
 export default class AirportSearch extends Component {
     constructor(props) {
         super(props);
-        airportList = conversions(store.getState().airList);
         this.state = {
             list: [],
         };
@@ -19,7 +18,7 @@ export default class AirportSearch extends Component {
     build() {
         let ar = [];
         let st = this.props.searchText ? this.props.searchText : '';   // 输入名字
-        airportList.forEach((val)=>{
+        airportList && airportList.forEach((val)=>{
             if(st != ''){
                 try{
                     let airportName = val.cityName;  // 机场名字
@@ -92,18 +91,42 @@ export default class AirportSearch extends Component {
                 });
             }
         });
-        /*console.info('build');
-        if(this.props.arLength) {
-            if(ar.length == 0) {
-                this.props.arLength(true);
-            }else {
-                this.props.arLength(false);
-            }
-        }*/
         return ar;
+    }
+    qiangzhizhixing() {  // 9.20 更新，解决下拉框数据想通问题
+        if((this.props.qiangzhizhixing == 1) && this.props.areaType && this.props.provinceOrArea) {  // 8.16新增，根据省份、区域进行筛选
+            let qiangzhiArr = [];
+            let areaType = Number(this.props.areaType);
+            let provinceOrArea = this.props.provinceOrArea;
+            switch (areaType){  // 2-省份，3区域
+                case 2:
+                    store.getState().airList.forEach((val)=>{
+                        if(val.province == provinceOrArea) {
+                            qiangzhiArr.push(val);
+                        }
+                    });
+                    break;
+                case 3:
+                    store.getState().airList.forEach((val)=>{
+                        if(val.airportArea == provinceOrArea) {
+                            qiangzhiArr.push(val);
+                        }
+                    });
+                    break;
+            }
+            airportList = conversions(qiangzhiArr);
+        }else {
+            airportList = conversions(store.getState().airList);
+        }
+    }
+    componentWillMount() {  // 9.20 更新，解决下拉框数据想通问题
+        this.qiangzhizhixing();
     }
     componentDidMount() {
         this.build();
+    }
+    componentWillReceiveProps() {  // 9.20 更新，解决下拉框数据想通问题
+        this.qiangzhizhixing();
     }
     shouldComponentUpdate() {
         if(this.props.update) {

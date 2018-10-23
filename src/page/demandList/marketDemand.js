@@ -13,7 +13,7 @@ export default class MarketDemand extends Component {
         super(props);
         this.openNewForm=this.openNewForm.bind(this);
         this.state = {
-            aType:false,//是否显示超链接流程引导
+            aType:false,//是否显示超链接流程引导 false:不显示
             itia: "",//匹配三字码
             num: 1,//初始化渲染数据数据
             releaseTime: true,//发布时间样式,false为升序
@@ -482,7 +482,7 @@ export default class MarketDemand extends Component {
                             )
                         }}
                     >
-                        发布时间
+                        <span>发布时间</span>
                                 <div className={style['demand-list-triangle']} onClick={(e) => this.changeArrangeTimeMethod(e)}>
                             <div className={releaseTimeTop}></div>
                             <div className={releaseTimeBottom}></div>

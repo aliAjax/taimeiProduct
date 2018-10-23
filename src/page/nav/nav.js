@@ -15,11 +15,13 @@ import style from '../../static/css/nav/nav.scss';
 import NavDropDown from '../../components/navDropDown/navDropDown';
 import ToView from './toView';
 import logo from './../../static/img/logo.png';
+import Axios from "../../utils/axiosInterceptors";
 
 export default class Nav extends Component{
     constructor(props){
         super(props);
         this.state = {
+            axisWidth: '320px',   // 下拉框-item宽度
             firstChange: true,  // 下拉是否是第一次打开
             update: true,  // 是否更新,true:不更新
             showSearch: false,  // TODO：新版-搜索下拉是否显示
@@ -46,9 +48,24 @@ export default class Nav extends Component{
             toolType:false,  // 控制工具显示
             roleType:false,  // 控制机场显示
             userType:false,  // 控制用户显示
+			noReadCountAboutFinacingApplication:"",//融资状态更改消息数量
         };
     }
+    changeClientWidth() {
+        let clientWidth = document.documentElement.clientWidth;
+        if(clientWidth <= 1366) {
+            this.setState({
+                axisWidth: '220px',
+            })
+        }else {
+            this.setState({
+                axisWidth: '320px',
+            })
+        }
+    }
     componentDidMount(){
+        this.changeClientWidth();
+        window.addEventListener('resize', this.changeClientWidth.bind(this));
         this.itemClick = emitter.addEventListener('itemClick',(value)=>{
             this.setState({
                 role:value,
@@ -68,10 +85,53 @@ export default class Nav extends Component{
                 userType:false,
             })
         });
+		emitter.addEventListener("usePaper",()=>{//下载使用手册
+			this.downLoadUse.submit();
+			// console.info("下载使用手册");
+        });
+        emitter.addEventListener("financing",()=>{
+			Axios({
+				method: 'post',
+				url: '/openChat',
+				params: {
+					fromNameId: store.getState().role.id,
+				},
+				headers: {
+					'Content-type': 'application/x-www-form-urlencoded'
+				}
+			})
+				.then((response) => {
+					if(response.data.opResult==0){
+						this.setState({
+							noReadCountAboutFinacingApplication:response.data.systemMessage.noReadCountAboutFinacingApplication
+						})
+					}
+				})
+        })
     }
     componentWillUnmount() {
         emitter.removeEventListener(this.itemClick);
         emitter.removeEventListener(this.closeFloatingLayer);
+        window.removeEventListener('resize', this.changeClientWidth.bind(this));
+    }
+    componentWillMount(){
+		Axios({
+			method: 'post',
+			url: '/openChat',
+			params: {
+				fromNameId: store.getState().role.id,
+			},
+			headers: {
+				'Content-type': 'application/x-www-form-urlencoded'
+			}
+		})
+			.then((response) => {
+			    if(response.data.opResult==0){
+			        this.setState({
+						noReadCountAboutFinacingApplication:response.data.systemMessage.noReadCountAboutFinacingApplication
+                    })
+                }
+            })
     }
     //TODO: 处理下拉点击事件更新class
     handleClick(type,e){
@@ -254,6 +314,11 @@ export default class Nav extends Component{
         role.headPortrait = require('./../../static/img/145.jpg');
         store.dispatch(an('ROLE',role));
     }
+    //弹出融资表单
+	financingForm(){
+        console.info("hahhah");
+    }
+    
     render(){
         this.closeFloatingLayer;
         let items;
@@ -271,13 +336,15 @@ export default class Nav extends Component{
             // overflowY: 'scroll',
             overflowY: 'hidden',
             maxHeight: '105px',
+            width: this.state.axisWidth,
             overflowX: 'hidden',
             background: 'white',
             zIndex: 22,
             boxShadow: '0 2px 11px rgba(85,85,85,0.1)'
         };
         let item = {  // 下拉搜索框
-            width: '320px',
+            // width: '320px',
+            width: this.state.axisWidth,
         };
         let fromData = {
             openFrom:true,
@@ -288,6 +355,11 @@ export default class Nav extends Component{
                 }
             }
         };
+		let financingData = {
+			openFrom:true,
+			fromType:6
+		};
+
         /*const menu = (
             <Menu onClick={this.menuClickFn.bind(this)}>
                 <Menu.Item key="机场">机场</Menu.Item>
@@ -296,8 +368,11 @@ export default class Nav extends Component{
                 <Menu.Item key="时刻">时刻</Menu.Item>
             </Menu>
         );*/
+        let address="/downloadOperatingInstruction";
         return(
-            <div className={`${style['nav-box']} box-show`}>
+            <div className={`${style['nav-box']} box-show`} id="nav-box">
+				<form id="downLoad" ref={(ref) => this.downLoadUse = ref} action={address} method="get" style={{ display: "none" }}>
+				</form>
                 <div className={style['logo']}>
                     <img src={logo}/>
                 </div>
@@ -305,7 +380,7 @@ export default class Nav extends Component{
                     {/*box_1*/}
                     <div className={style['bar-w']}>
                         <div id="air-index" className={classNames({[style['bar-item']]:true,[style['bar-item-1']]:true})}><a href="#/">首页</a></div>
-                        <div id="air-po" className={classNames({[style['bar-item']]:true,[style['bar-item-1']]:true})}><a href="#/PublicOpinion">新闻舆情</a></div>
+                        <div id="air-po" className={classNames({[style['bar-item']]:true,[style['bar-item-1']]:true})}><a href="#/publicOpinion/null/2">新闻舆情</a></div>
                         <div id="air-tp" className={classNames({[style['bar-item']]:true,[style['bar-item-1']]:true})}>
                             <a onClick={this.handleClick.bind(this,'toolType')}>工具 <i className={'iconfont'}>&#xe605;</i></a>
                             <CSSTransition
@@ -414,8 +489,8 @@ export default class Nav extends Component{
                                         ? (<div className={style['role-search-btn']} onClick={this.searchBrnClickFn.bind(this)}>
                                                 <i className={'iconfont'}>&#xe62e;</i>
                                             </div>)
-                                        : (<div className={style['role-search-btn']} style={{background: '#ccc'}}>
-                                                <i className={'iconfont'} style={{color: '#DEE2E5'}}>&#xe62e;</i>
+                                        : (<div className={style['role-search-btn']}>
+                                                <i className={'iconfont'}>&#xe62e;</i>
                                             </div>)
                                 }
 
@@ -446,6 +521,21 @@ export default class Nav extends Component{
                             </div>
                         </div>
                         <ToView></ToView>
+                        {
+                            store.getState().role.role==1 &&
+                                <div className={style['financingBtn']}
+                                     onClick={()=>{
+                                                    emitter.emit('openFrom',financingData);
+                                                    emitter.emit('financing');
+                                             }}
+                                >
+                                    <div className={`iconfont ${style['money']}`}>&#xe74f;</div>
+                                    <div style={{display:"flex",alignItems:"center"}}>
+										<div className={style['spanTitle']}>航线融资</div>
+                                        {this.state.noReadCountAboutFinacingApplication>0?<div className={style['spanNum']}>{this.state.noReadCountAboutFinacingApplication<=99?this.state.noReadCountAboutFinacingApplication:'99+'}</div>:""}
+                                    </div>
+                                </div>
+                        }
                         <div className={style['bar-item']} onClick={()=>{emitter.emit('openFrom',fromData)}}>
                             <div className={style['item-publish']}>
                                 <i className={'iconfont'}>&#xe606;</i>

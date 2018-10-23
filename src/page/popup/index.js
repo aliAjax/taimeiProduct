@@ -7,7 +7,7 @@ import {
 import emitter from "../../utils/events";
 import EditCapacityRelease from './editCapacityRelease';
 import EditAirLineRelease from './editAirLineRelease';
-import ChooseAirlineRelease from './chooseAirlineRelease';
+// import ChooseAirlineRelease from './chooseAirlineRelease';
 import OutOfStock from './outOfStock';
 import Information from './information';
 
@@ -19,9 +19,7 @@ export default class Popup extends Component {
 
         };
     }
-
     componentDidMount() {
-
     }
     componentWillUnmount() {
     }
@@ -46,9 +44,9 @@ export default class Popup extends Component {
             case 2:
                 popup = <EditCapacityRelease popupMes={this.props.popupMes} />;
                 break;
-            case 3:
-                popup = <ChooseAirlineRelease popupMes={this.props.popupMes} />;
-                break;
+            // case 3:
+            //     popup = <ChooseAirlineRelease popupMes={this.props.popupMes} />;
+            //     break;
             case 4:
                 popup = <OutOfStock popupMes={this.props.popupMes} />;
                 break;

@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, Fragment} from 'react';
 import styles from '../../static/css/components/payEarnestMoney.scss'
 import Axios from "./../../utils/axiosInterceptors";
 import { store } from '../../store/index'
@@ -6,6 +6,7 @@ import { Modal } from 'antd';
 import emitter from "../../utils/events";
 import Btn from "../button/btn";
 import DealPwd from '../dealPwd/dealPwd';
+import IconInfo from '../IconInfo/IconInfo';
 
 export default class PayEarnestMoney extends Component {
     constructor(props) {
@@ -25,6 +26,16 @@ export default class PayEarnestMoney extends Component {
         Modal.error({
             title: mes,
         });
+    }
+    financingDataFn() {
+        let financingData = {
+            openFrom:true,
+            fromType:6,
+            fromMes: {
+                type:false
+            }
+        };
+        emitter.emit('openFrom',financingData);
     }
     sendSure() {
         let employeeId = store.getState().role.id;
@@ -48,6 +59,29 @@ export default class PayEarnestMoney extends Component {
                 emitter.emit('renewWodefabu');
                 this.success('发布成功！');
                 this.props.close('1');
+            }else if(response.data.opResult === '4') {
+                /*let msg = <Fragment>
+                    {response.data.msg}您也可以点此申请
+                    <span style={{color: 'blue', fontWeight: 'bold', cursor: 'pointer'}} onClick={this.financingDataFn.bind(this)}>航线融资</span>
+                </Fragment>;*/
+                // this.error(msg);
+                const confirm = Modal.confirm;
+                confirm({
+                    title: '需求发布失败',
+                    content: `${response.data.msg}您也可以点击申请航线融资`,
+                    okText: '申请航线融资',
+                    cancelText: '取消',
+                    onOk() {
+                        // this.financingDataFn.bind(this);
+                        let financingData = {
+                            openFrom:true,
+                            fromType:6,
+                        };
+                        emitter.emit('openFrom',financingData);
+                    },
+                    onCancel() {},
+                });
+                this.props.close('2');
             }else {
                 this.error(response.data.msg);
                 this.props.close('2');
@@ -95,7 +129,10 @@ export default class PayEarnestMoney extends Component {
                         <div className={styles['content']}>
                             <div>
                                 <div>{this.state.data.title}</div>
-                                <div>意向金</div>
+                                <div>
+                                    意向金
+                                    <IconInfo placement={"right"} title={"该意向金作为保证交易信息真实性使用，在订单完成前不会从账户实际扣除，仅作冻结处理，未达成交易则解冻。航线开通后可作为保证金使用。"}/>
+                                </div>
                             </div>
                             <div>-{this.state.data.intentionMoney}</div>
                         </div>

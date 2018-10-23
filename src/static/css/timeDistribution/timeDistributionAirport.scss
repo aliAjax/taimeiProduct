@@ -353,3 +353,12 @@
   overflow-y: scroll;
   font-size: 1.2rem;
 }
+/*1366适配*/
+@media screen and (max-width: 1366px) {
+  .spin{
+    left: 600px;
+  }
+  .rightBox{
+    left: 1221.5px !important;
+  }
+}

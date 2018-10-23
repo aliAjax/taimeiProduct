@@ -34,6 +34,7 @@ export default class EditAirLineRelease extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            timer: null,
             update: true,
             role: store.getState().role.role,//当前用户角色
             currentEmployeedId: store.getState().role.id,//当前用户id
@@ -227,6 +228,7 @@ export default class EditAirLineRelease extends Component {
             flightPlan = obj.demandPlans && obj.demandPlans.length ? obj.demandPlans[0] : {};
         }
         let { dpt = '', dptNm = '', pst = '', pstNm = '', arrv = '', arrvNm = '' } = flightPlan || {};
+        let internationalAirline = obj.internationalAirline;
 
         let data = [
             { name: "1", type: false },
@@ -247,6 +249,7 @@ export default class EditAirLineRelease extends Component {
         });
         this.setState(() => {
             return {
+                internationalAirline,//航线类型
                 existDraft: 1,//1:重来没有响应过,2:有草稿
 
                 releaseDemandPoint,// 发布需求的机场的本场三字码
@@ -315,6 +318,7 @@ export default class EditAirLineRelease extends Component {
             remark = '',//其他说明
             title = '',//标题
             responsePlans = null,//响应方案
+            internationalAirline,//航线类型(国际,国内)
         } = obj || reResponse;
 
         let {
@@ -398,6 +402,7 @@ export default class EditAirLineRelease extends Component {
                 responsePlans, state, responseProgress,
                 quoteType, quotedPrice,
                 data, title,
+                internationalAirline,
 
                 // group_dpt: { dpt, dptNm, dptLevel, dptEnter },
                 // group_pst: { pst, pstNm, pstLevel, pstEnter },
@@ -468,32 +473,42 @@ export default class EditAirLineRelease extends Component {
     }
 
 
-
+    inputTimeout() {  // 输入框延时
+        this.setState({
+            update: false,
+        })
+        // this.setState({
+        //     update: true,
+        // }, () => {
+        //     clearInterval(window.timer);
+        //     window.timer=setTimeout(() => {
+        //         this.setState({
+        //             update: false,
+        //         })
+        //     },0);
+        // });
+    }
     // TODO: 始发运力对应的事件
     searchTextChangeFn2(e) {  //输入框输入内容改变
         let target = e.target;
         let val = target.value.replace(/(^\s*)|(\s*$)/g, "");  // 去除空格
-        if (val == '') {
+        if (val == '' || !val) {
+            console.log('执行了')
             this.setState({
-                dpt: '',
                 searchText2: target.value,
                 searchText2Bus: '',
+                dpt: '',
+                update: true,
+                showAirportSearch2: false,
             })
         } else {
             this.setState({
                 showAirportSearch2: true,
                 searchText2: target.value,
+                update: true,
             })
         }
-        this.setState({
-            update: true,
-        }, () => {
-            setTimeout(() => {
-                this.setState({
-                    update: false,
-                })
-            })
-        })
+        this.inputTimeout();
     }
     inputClickFn2(e) {  // 输入框焦点事件
         e.stopPropagation();
@@ -533,13 +548,10 @@ export default class EditAirLineRelease extends Component {
                     showAirportSearch2: false
                 }
             } else {
-                // this.state.group_dpt.dptNm = data.name;
-                // this.state.group_dpt.dpt = data.code;
                 return {
                     searchText2Bus: data.name,
                     dpt: data.code,  // 始发三字码
                     showAirportSearch2: false,
-                    // group_dpt: this.state.group_dpt,
                 }
             }
         })
@@ -560,15 +572,7 @@ export default class EditAirLineRelease extends Component {
                 searchText3: target.value,
             })
         }
-        this.setState({
-            update: true,
-        }, () => {
-            setTimeout(() => {
-                this.setState({
-                    update: false,
-                })
-            })
-        })
+        this.inputTimeout();
     }
     inputClickFn3(e) {  // 输入框焦点事件
         e.stopPropagation();
@@ -632,15 +636,7 @@ export default class EditAirLineRelease extends Component {
                 searchText4: target.value,
             })
         }
-        this.setState({
-            update: true,
-        }, () => {
-            setTimeout(() => {
-                this.setState({
-                    update: false,
-                })
-            })
-        })
+        this.inputTimeout();
     }
     inputClickFn4(e) {  // 输入框焦点事件
         e.stopPropagation();
@@ -710,7 +706,7 @@ export default class EditAirLineRelease extends Component {
 
                 arrv: targetPoint || '',
                 searchText4: targetPointNm || '',
-                searchText5Bus: targetPointNm || '',
+                searchText4Bus: targetPointNm || '',
                 // airline: value,//0 直飞,1 经停
 
                 // dptLevel: this.state.pstLevel,
@@ -738,7 +734,7 @@ export default class EditAirLineRelease extends Component {
 
                 arrv: targetPoint || '',
                 searchText4: targetPointNm || '',
-                searchText5Bus: targetPointNm || '',
+                searchText4Bus: targetPointNm || '',
                 // airline: value,//0 直飞,1 经停
 
                 // dptLevel: '',
@@ -765,7 +761,7 @@ export default class EditAirLineRelease extends Component {
 
                 arrv: releaseDemandPoint || '',
                 searchText4: releaseDemandPointNm || '',
-                searchText5Bus: releaseDemandPointNm || '',
+                searchText4Bus: releaseDemandPointNm || '',
                 // airline: value,//0 直飞,1 经停
 
                 // dptLevel: '',
@@ -1674,7 +1670,7 @@ export default class EditAirLineRelease extends Component {
         this.setState(() => {
             msg
         })
-        return tip;
+        return this.state.isInit == 1 ? '' : tip;
     }
 
     // 联系人检查
@@ -2089,7 +2085,9 @@ export default class EditAirLineRelease extends Component {
             zIndex: 22,
             boxShadow: '0 2px 11px rgba(85,85,85,0.1)'
         };
-        let dptAirportSearch = this.state.countryType == 0
+        console.log(this.state.internationalAirline)
+        console.log(typeof this.state.internationalAirline)
+        let dptAirportSearch = this.state.internationalAirline == '1'
             ? <AirportSearch
                 update={this.state.update}
                 axis={axis}
@@ -2100,7 +2098,7 @@ export default class EditAirLineRelease extends Component {
                 axis={axis}
                 resData={this.airportData2.bind(this)}
                 searchText={this.state.searchText2} />;
-        let pstAirportSearch = this.state.countryType == 0
+        let pstAirportSearch = this.state.internationalAirline == '1'
             ? <AirportSearch
                 update={this.state.update}
                 axis={axis}
@@ -2111,7 +2109,7 @@ export default class EditAirLineRelease extends Component {
                 axis={axis}
                 resData={this.airportData3.bind(this)}
                 searchText={this.state.searchText3} />;
-        let arrvAirportSearch = this.state.countryType == 0
+        let arrvAirportSearch = this.state.internationalAirline == '1'
             ? <AirportSearch
                 update={this.state.update}
                 axis={axis}
@@ -2123,7 +2121,7 @@ export default class EditAirLineRelease extends Component {
                 resData={this.airportData4.bind(this)}
                 searchText={this.state.searchText4} />;
 
-        let { editType, airline, quoteType, quotedPrice, periodValidity, sailingtime, performShift, remark, contact, ihome, title, visible_response, visible_reEdit, visible_affirm, visible_afterAffirmReEdit, uploading, showDealPwd} = this.state;
+        let { editType, airline, quoteType, quotedPrice, periodValidity, sailingtime, performShift, remark, contact, ihome, title, visible_response, visible_reEdit, visible_affirm, visible_afterAffirmReEdit, uploading, showDealPwd } = this.state;
 
         return (
             <div className={style['editAirLineRelease']}>
@@ -2160,7 +2158,7 @@ export default class EditAirLineRelease extends Component {
                                         onChange={this.searchTextChangeFn2.bind(this)}
                                         onClick={this.inputClickFn2.bind(this)}
                                         onBlur={this.inputBlurFn2.bind(this)}
-                                        placeholder={'请选择始发航点'}
+                                        placeholder={'请输入始发航点'}
                                     />
                                     <div className={style['drop-list']}>
                                         {
@@ -2188,7 +2186,7 @@ export default class EditAirLineRelease extends Component {
                                             onChange={this.searchTextChangeFn3.bind(this)}
                                             onClick={this.inputClickFn3.bind(this)}
                                             onBlur={this.inputBlurFn3.bind(this)}
-                                            placeholder={'请选择经停航点'}
+                                            placeholder={'请输入经停航点'}
                                         />
                                         <div className={style['drop-list']}>
                                             {
@@ -2218,7 +2216,7 @@ export default class EditAirLineRelease extends Component {
                                         onChange={this.searchTextChangeFn4.bind(this)}
                                         onClick={this.inputClickFn4.bind(this)}
                                         onBlur={this.inputBlurFn4.bind(this)}
-                                        placeholder={'请选择到达航点'}
+                                        placeholder={'请输入到达航点'}
                                     />
                                     <div className={style['drop-list']}>
                                         {
@@ -2235,42 +2233,41 @@ export default class EditAirLineRelease extends Component {
                     {/* 飞行时刻 */}
                     <div className={style['time-container']}>
                         {/* 始发时刻 */}
-                        <div className={`${style['time-col']} ${style['time-line']}`}>
+                        <div className={`${style['time-col']}`}>
                             <div className={style['time-box']}>
                                 {/* 始发出港时刻 */}
                                 <div className={`${style['common-style']} ${style['time-item']}`}>
                                     <div>
-                                        <span>出</span>
+                                        <span className={style['bgColorBlue']}>出</span>
                                     </div>
                                     <div>
                                         <span className={"ant-time-picker-icon"}></span>
                                         <div className={style['drop-list-time']}>
-                                            {/* <HourTimer showArrow={false} time={""} type={false} defaultTime={this.state.dptLevel} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'dptLevel')} /> */}
                                             <TimePicker format={format} placeholder={'请选择出港时刻'} onChange={this.dptLevel.bind(this)} value={this.mountTime(this.state.dptLevel)} />
-                                            {/* <TimeAcross confineTime="" defaultTime={this.state.dptLevel} returnTime={(time) => { this.receivedTime(time, 'dptLevel') }}/> */}
                                         </div>
                                     </div>
                                     <span className={style['msg']} >
                                         {this.checkTime('dptLevel')}
                                     </span>
+                                    <span className={style['ident']} style={{ color: '#4172f4' }}>去程</span>
                                 </div>
                                 {/* 始发进港时刻 */}
                                 <div className={`${style['common-style']} ${style['time-item']}`}>
                                     <div>
-                                        <span>进</span>
+                                        <span className={style['bgColorYellow']}>进</span>
                                     </div>
                                     <div>
                                         <input type="text" maxLength="20" />
                                         <span className={"ant-time-picker-icon"}></span>
                                         <div className={style['drop-list-time']}>
-                                            {/* <HourTimer showArrow={false} time={this.state.airline == 0 ? this.state.arrvLevel : this.state.pstBackLevel} type={false} defaultTime={this.state.dptEnter} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'dptEnter')} /> */}
-                                            <TimePicker format={format} placeholder={'请选择进港时刻'} onChange={this.dptEnter.bind(this)} value={this.mountTime(this.state.dptEnter)} />
-                                            {/* <TimeAcross confineTime={this.state.airline == 0 ? this.state.arrvLevel : this.state.pstBackLevel} defaultTime={this.state.dptEnter} returnTime={(time) => { this.receivedTime(time, 'dptEnter') }}/> */}
+                                            <TimePicker format={format} placeholder={'请选择进港时刻'} onChange={this.dptEnter.bind(this)} value={this.mountTime(this.state.dptEnter)}
+                                                disabled={this.state.airline == 0 ? (this.state.arrvLevel ? false : true) : (this.state.pstBackLevel ? false : true)} />
                                         </div>
                                     </div>
                                     <span className={style['msg']}>
                                         {this.checkTime('dptEnter')}
                                     </span>
+                                    <span className={style['ident']} style={{ color: '#ceac30' }}>返程</span>
                                 </div>
                             </div>
                         </div>
@@ -2288,15 +2285,12 @@ export default class EditAirLineRelease extends Component {
                                             {/* 经停进港时刻 */}
                                             <div className={`${style['common-style']} ${style['time-item']} ${style['small-time-item']}`}>
                                                 <div>
-                                                    <span>进</span>
+                                                    <span className={style['bgColorBlue']}>进</span>
                                                 </div>
                                                 <div>
                                                     <span className={"ant-time-picker-icon"}></span>
                                                     <div className={style['drop-list-time']}>
-                                                        {/*time:禁选条件，“”未没有，如有：格式2018-06-01   defaultTime：草稿数据  outTimeEvent:组件返回获取的时间*/}
-                                                        {/* <HourTimer showArrow={false} time={this.state.dptLevel} type={false} defaultTime={this.state.pstEnter} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'pstEnter')} /> */}
-                                                        <TimePicker format={format} placeholder={'进港时刻'} onChange={this.pstEnter.bind(this)} value={this.mountTime(this.state.pstEnter)} />
-                                                        {/* <TimeAcross confineTime={this.state.dptLevel} defaultTime={this.state.pstEnter} returnTime={(time) => { this.receivedTime(time, 'pstEnter') }} /> */}
+                                                        <TimePicker format={format} placeholder={'进港时刻'} onChange={this.pstEnter.bind(this)} value={this.mountTime(this.state.pstEnter)} disabled={this.state.dptLevel ? false : true} />
                                                     </div>
                                                 </div>
                                                 <span className={style['msg']}>
@@ -2306,14 +2300,12 @@ export default class EditAirLineRelease extends Component {
                                             {/* 经停出港时刻 */}
                                             <div className={`${style['common-style']} ${style['time-item']} ${style['small-time-item']}`}>
                                                 <div>
-                                                    <span>出</span>
+                                                    <span className={style['bgColorBlue']}>出</span>
                                                 </div>
                                                 <div>
                                                     <span className={"ant-time-picker-icon"}></span>
                                                     <div className={style['drop-list-time']}>
-                                                        {/* <HourTimer showArrow={false} time={this.state.pstEnter} type={false} defaultTime={this.state.pstLevel} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'pstLevel')} /> */}
-                                                        <TimePicker format={format} placeholder={'出港时刻'} onChange={this.pstLevel.bind(this)} value={this.mountTime(this.state.pstLevel)} />
-                                                        {/* <TimeAcross confineTime={this.state.pstEnter} defaultTime={this.state.pstLevel} returnTime={(time) => { this.receivedTime(time, 'pstLevel') }} /> */}
+                                                        <TimePicker format={format} placeholder={'出港时刻'} onChange={this.pstLevel.bind(this)} value={this.mountTime(this.state.pstLevel)} disabled={this.state.pstEnter ? false : true} />
                                                     </div>
                                                 </div>
                                                 <span className={style['msg']}>
@@ -2333,14 +2325,12 @@ export default class EditAirLineRelease extends Component {
                                             {/* 返回经停出港时刻 */}
                                             <div className={`${style['common-style']} ${style['time-item']} ${style['small-time-item']}`}>
                                                 <div>
-                                                    <span>出</span>
+                                                    <span className={style['bgColorYellow']}>出</span>
                                                 </div>
                                                 <div>
                                                     <span className={"ant-time-picker-icon"}></span>
                                                     <div className={style['drop-list-time']}>
-                                                        {/* <HourTimer showArrow={false} time={this.state.pstBackEnter} type={false} defaultTime={this.state.pstBackLevel} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'pstBackLevel')} /> */}
-                                                        <TimePicker format={format} placeholder={'出港时刻'} onChange={this.pstBackLevel.bind(this)} value={this.mountTime(this.state.pstBackLevel)} />
-                                                        {/* <TimeAcross confineTime={this.state.pstBackEnter} defaultTime={this.state.pstBackLevel} returnTime={(time) => { this.receivedTime(time, 'pstBackLevel') }} /> */}
+                                                        <TimePicker format={format} placeholder={'出港时刻'} onChange={this.pstBackLevel.bind(this)} value={this.mountTime(this.state.pstBackLevel)} disabled={this.state.pstBackEnter ? false : true} />
                                                     </div>
                                                 </div>
                                                 <span className={style['msg']}>
@@ -2350,14 +2340,12 @@ export default class EditAirLineRelease extends Component {
                                             {/* 返回经停进港时刻 */}
                                             <div className={`${style['common-style']} ${style['time-item']} ${style['small-time-item']}`}>
                                                 <div>
-                                                    <span>进</span>
+                                                    <span className={style['bgColorYellow']}>进</span>
                                                 </div>
                                                 <div>
                                                     <span className={"ant-time-picker-icon"}></span>
                                                     <div className={style['drop-list-time']}>
-                                                        {/* <HourTimer showArrow={false} time={this.state.arrvLevel} type={false} defaultTime={this.state.pstBackEnter} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'pstBackEnter')} /> */}
-                                                        <TimePicker format={format} placeholder={'进港时刻'} onChange={this.pstBackEnter.bind(this)} value={this.mountTime(this.state.pstBackEnter)} />
-                                                        {/* <TimeAcross confineTime={this.state.arrvLevel} defaultTime={this.state.pstBackEnter} returnTime={(time) => { this.receivedTime(time, 'pstBackEnter') }} /> */}
+                                                        <TimePicker format={format} placeholder={'进港时刻'} onChange={this.pstBackEnter.bind(this)} value={this.mountTime(this.state.pstBackEnter)} disabled={this.state.arrvLevel ? false : true} />
                                                     </div>
                                                 </div>
                                                 <span className={style['msg']}>
@@ -2394,15 +2382,14 @@ export default class EditAirLineRelease extends Component {
                                 {/* 到达进港时刻 */}
                                 <div className={`${style['common-style']} ${style['time-item']}`}>
                                     <div>
-                                        <span>进</span>
+                                        <span className={style['bgColorBlue']}>进</span>
                                     </div>
                                     <div>
                                         <input type="text" maxLength="20" />
                                         <span className={"ant-time-picker-icon"}></span>
                                         <div className={style['drop-list-time']}>
-                                            {/* <HourTimer showArrow={false} time={this.state.airline == 0 ? this.state.dptLevel : this.state.pstLevel} type={false} defaultTime={this.state.arrvEnter} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'arrvEnter')} /> */}
-                                            <TimePicker format={format} placeholder={'请选择进港时刻'} onChange={this.arrvEnter.bind(this)} value={this.mountTime(this.state.arrvEnter)} />
-                                            {/* <TimeAcross confineTime={this.state.airline == 0 ? this.state.dptLevel : this.state.pstLevel} defaultTime={this.state.arrvEnter} returnTime={(time) => { this.receivedTime(time, 'arrvEnter') }} /> */}
+                                            <TimePicker format={format} placeholder={'请选择进港时刻'} onChange={this.arrvEnter.bind(this)} value={this.mountTime(this.state.arrvEnter)}
+                                                disabled={this.state.airline == 0 ? (this.state.dptLevel ? false : true) : (this.state.pstLevel ? false : true)} />
                                         </div>
                                     </div>
                                     <span className={style['msg']}>
@@ -2412,15 +2399,13 @@ export default class EditAirLineRelease extends Component {
                                 {/* 到达出港时刻 */}
                                 <div className={`${style['common-style']} ${style['time-item']}`}>
                                     <div>
-                                        <span>出</span>
+                                        <span className={style['bgColorYellow']}>出</span>
                                     </div>
                                     <div>
                                         <input type="text" maxLength="20" />
                                         <span className={"ant-time-picker-icon"}></span>
                                         <div className={style['drop-list-time']}>
-                                            {/* <HourTimer showArrow={false} time={this.state.arrvEnter} type={false} defaultTime={this.state.arrvLevel} outTimeEvent={(data, timeStr) => this.outTimeEvent(data, 'arrvLevel')} /> */}
-                                            <TimePicker format={format} placeholder={'请选择出港时刻'} onChange={this.arrvLevel.bind(this)} value={this.mountTime(this.state.arrvLevel)} />
-                                            {/* <TimeAcross confineTime={this.state.arrvEnter} defaultTime={this.state.arrvLevel} returnTime={(time) => { this.receivedTime(time, 'arrvLevel') }} /> */}
+                                            <TimePicker format={format} placeholder={'请选择出港时刻'} onChange={this.arrvLevel.bind(this)} value={this.mountTime(this.state.arrvLevel)} disabled={this.state.arrvEnter ? false : true} />
                                         </div>
                                     </div>
                                     <span className={style['msg']}>

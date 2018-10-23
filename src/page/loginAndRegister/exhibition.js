@@ -98,14 +98,18 @@ export default class Exhibition extends Component{
             <div id={'anchorBox'} className={style['banner-panel']}>
                 <img className={style['newAir']} src={require('./../../static/img/login/newAir.png')} alt=""/>
                 <div className={style['banner-001']}>
+                    <span>©2018 航遇 成都太美航空技术有限公司  版权所有</span>
+                    <p>备案号：蜀ICP备16026684号-3
+                        <a target="_blank" style={{color:'#535353',marginLeft:'10px'}} href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=51019002001708"><img style={{height: "16px",transform: "translate(-3px,-3px)"}} src={"http://www.beian.gov.cn/portal/download?token=fa8b23ba-8404-46cb-99e0-6782283bd2b6"}/>川公网安备 51019002001708号</a>
+                    </p>
+                </div>
+                <div className={style['banner-002']}>
                     <span>版本公告</span>
                     <p>版本号：{version_numbe}</p>
                 </div>
-                <div className={style['banner-002']}>©2017  航遇  成都太美航空技术有限公司</div>
                 <img className={style['banner-01']} src={require('./../../static/img/login/logo.png')} />
                 <div className={classNames({[style['banner-item']]:true})}>
                     <img className={style["text1"]} src={require('./../../static/img/login/text.png')} />
-                    <img className={style["text2"]} src={require('./../../static/img/login/text2.png')} />
                 </div>
                 <div className={classNames({[style['banner-item']]:true})}>
                     <div className={style['banner-e1']}>
@@ -123,6 +127,7 @@ export default class Exhibition extends Component{
                                 <p>www.taimei-air.com</p>
                             </div>
                         </div>
+                        <img className={style["text2"]} src={require('./../../static/img/login/text2.png')} />
                     </div>
                     <img className={classNames({[style['yuna']]:true})} src={require('./../../static/img/login/yuna.png')} />
                 </div>

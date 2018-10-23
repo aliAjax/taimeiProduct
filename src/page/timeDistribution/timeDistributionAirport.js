@@ -3,6 +3,7 @@
 import React, { Component } from 'react';
 import { Select,Button,Pagination,Spin, Breadcrumb } from 'antd';
 import { host as $host} from "./../../utils/port";
+import {store} from "../../store/index";
 import Axios from "./../../utils/axiosInterceptors";
 import ArrangeType from "../../components/arrangeType/arrangeType";
 import style from "../../static/css/timeDistribution/timeDistributionAirport.scss";
@@ -19,6 +20,7 @@ export default class TimeDistributionAirport extends Component{
             airportName:"",//机场名称
             timeTableList:[],//时刻表数据
             timeList:[],//数据更新时间列表
+            imgUrl:null,//图片地址
             timeDistributeList:[//表格数据
                 {
                     name:"周一",
@@ -198,9 +200,26 @@ export default class TimeDistributionAirport extends Component{
     componentWillMount(){  // 将要渲染
         let iata=this.props.match.params.iata.split(",")[0];
         let airportName=this.props.match.params.iata.split(",")[1];
-        this.setState({
+		let airList=store.getState().airList;
+		var imgUrl={
+		    url:"../../static/img/Slice.png",
+            type:false
+        };
+		for(let i=0;i<airList.length;i++){
+            if(airList[i].iata==iata){
+			  if(airList[i].navBackground){
+			      imgUrl={
+			          url:airList[i].navBackground,
+                      type:true
+                  };
+              };
+			  break;
+            };
+		};
+		this.setState({
             iata,
-            airportName
+            airportName,
+            imgUrl
         });
         //请求机场时刻表数据
         let pageNum=(parseInt(this.state.offset)-1)*10;
@@ -215,7 +234,6 @@ export default class TimeDistributionAirport extends Component{
                 'Content-type': 'application/x-www-form-urlencoded'
             }
         }).then((response)=>{
-            console.log(response)
             if(response.data.opResult==0){
                 let firstTime=response.data.timeList[0]
                 this.setState({
@@ -255,7 +273,7 @@ export default class TimeDistributionAirport extends Component{
             this.setState({
                 left: `${a + 1100}px`
             }, ()=>{
-                console.info(this.state.left)
+                // console.info(this.state.left)
             });
         }
     }
@@ -1197,6 +1215,9 @@ export default class TimeDistributionAirport extends Component{
 
     render(){
         let totalCount=this.state.totalCount;
+        let imgUrl=this.state.imgUrl.url.toString();
+        console.info(imgUrl);
+        let imgType=this.state.imgUrl.type;
         let paginationStyle,paginationText;
         let spinType=style['noShow'];
         if(totalCount!=0){
@@ -1219,6 +1240,7 @@ export default class TimeDistributionAirport extends Component{
         return(
             <div ref={(data)=>this.scroll=data} className={`router-context scroll ${style['allBox']}`} style={{backgroundColor:"#f8f8f8",color:"#605e7c"}}>
                 <div className={spinType}>
+                {/*<div className={style['spin']}>*/}
                     <Spin tip="数据加载中"/>
                 </div>
                 <form ref={(ref)=>this.downLoad=ref} method="post" action={address} style={{display:"none"}}>
@@ -1236,7 +1258,9 @@ export default class TimeDistributionAirport extends Component{
                     <div className={style['contentBox']}>
                         <div className={style['leftBox']}>
                             <div className={style['imgBox']}>
-                                <img src={require("../../static/img/Slice.png")} alt=""/>
+								{
+									imgType ? <img src={imgUrl} alt=""/> : <img src={require("../../static/img/Slice.png")} alt=""/>
+								}
                                 <div className={style['showTitle']}>{this.state.airportName}</div>
                             </div>
                             <div className={style['timeTableBox']}>

@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import style from './../../static/css/demandList/demandList.scss';
 import emitter from '../../utils/events';
-
+const winType=(window.screen.width>1366)?1:0;//适配屏幕，1为大屏 0为笔记本
 export default class AirPortDemandItem extends Component {
 
     //点击收藏事件
@@ -113,6 +113,36 @@ export default class AirPortDemandItem extends Component {
                 price = bottomSubsidyPrice
             }
         };
+        // let typeText = "暂无报价";
+        // let typeTextTitle = "暂无报价";
+        // if(winType==1){
+        //     if (subsidypolicyStr != null && subsidypolicyStr != "") {//报价换行处理
+        //         typeText = subsidypolicyStr;
+        //         typeTextTitle = subsidypolicyStr.split("<br/>").join(";");
+        //         typeText=typeText.split("<br/>");
+        //         if(typeText.length>2){//缩写处理
+        //             typeText[2]="···"
+        //         };
+        //         typeText=typeText.join("<br/>");
+        //     }
+        // }else {
+        //     let newArr1=subsidypolicyStr.split("<br/>");
+        //     typeTextTitle = subsidypolicyStr.split("<br/>").join(";");
+        //     for(let i=0;i<newArr1.length;i++){
+        //         if(newArr1[i].length==12){
+        //             let newS = newArr1[i].split("");
+        //             newS.length=9;
+        //             newArr1[i]=newS.join("");
+        //             newArr1[i]=newArr1[i]+"...";
+        //             //newArr1[i].replace(/`万/班`<!--//)-->
+        //         }
+        //     };
+        //     typeText=newArr1;
+        //     if(typeText.length>2){//缩写处理
+        //         typeText[2]="···"
+        //     };
+        //     typeText=typeText.join("<br/>");
+        // }
         //收到的方案量
         let recivedResponseNum = "";
         if (recivedResponseCount == null || recivedResponseCount == undefined) {
@@ -193,12 +223,12 @@ export default class AirPortDemandItem extends Component {
                         <div>机型</div>
                         <div dangerouslySetInnerHTML={{ __html: aircrfttypText }}></div>
                     </div>
-                    <div style={{ marginLeft: 0, marginRight: "15px" }}>
+                    <div style={{ marginLeft: 0, marginRight: "15px" }} className={style['reference']}>
                         <div>
                             参考报价(￥)
                         </div>
                         <div style={{ "color": "#f98c34", fontWeight: "bold" }}>
-                            <div style={{ color: "#f98c34", maxWidth: 75, whiteSpace: "nowrap" }} dangerouslySetInnerHTML={{ __html: typeText }}></div>
+                            <div title={subsidypolicyStr.split('<br/>')} style={{ color: "#f98c34", whiteSpace: "nowrap", textOverflow:"ellipsis",overflow:"hidden"}} dangerouslySetInnerHTML={{ __html: typeText }}></div>
                         </div>
                     </div>
                     <div>

@@ -12,37 +12,52 @@
 }
 
 .banner-001 {
-  width: 300px;
+  width: 1000px;
   height: 20px;
   position: fixed;
   left: 3%;
-  top: 93%;
+  top: 94%;
   display: flex;
   flex-flow: row nowrap;
   z-index: 3;
   > span {
     font-size: 1.2rem;
-    //font-weight: bold;
-    color: #fdfdfd;
+    font-weight: bold;
+    color: #535353;
     padding-bottom: 9px;
     margin-right: 28px;
   }
   p {
     font-size: 1.2rem;
-    //font-weight: bold;
-    color: #fdfdfd;
+    font-weight: bold;
+    color: #535353;
   }
 }
 .banner-002 {
-  width: 250px;
+  width: 270px;
   height: 20px;
   position: fixed;
   right: 3%;
-  top: 93%;
+  top: 94%;
   z-index: 3;
-  font-size: 1.2rem;
-  //font-weight: bold;
-  color: #fdfdfd;
+  display: flex;
+  flex-flow: row nowrap;
+  > span {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #535353;
+    padding-bottom: 9px;
+    margin-right: 28px;
+  }
+  p {
+    //text-decoration: underline;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 1px solid #535353;
+    color: #535353;
+  }
+
+
 }
 .banner-01 {
   position: fixed;
@@ -114,9 +129,12 @@
   left: 16%;
 }
 .text2{
-  position: fixed;
+  z-index: 3;
   bottom: 33px;
-  right: 19%;
+  right: 22%;
+  width: 400px;
+  height: 67px;
+  margin-top: 179px;
 }
 .newAir{
   position: absolute;

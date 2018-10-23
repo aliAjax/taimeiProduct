@@ -79,10 +79,10 @@ export default class DimAirFzz extends Component {
     }
 
     render() {
-        let aircrfttypBoxStyle = this.state.aircrfttypShowType ? style['airTypeBox'] : style['hidden'];
+        let aircrfttypBoxStyle = this.state.aircrfttypShowType ? `${style['airTypeBox']} ${style['airTypeBox-fzz']}` : style['hidden'];
         return (
           <Fragment>
-              <input className={style['capacity-release-input-hover']}
+              <input className={`${style['capacity-release-input-hover']} ${style['capacity-release-input-hover-fzz']}`}
                      ref={(data) => this.airTypeInput = data}
                      onFocus={this.aircrfttypOnFocus.bind(this)}
                      onBlur={this.aircrfttypOnBlur.bind(this)}
@@ -93,7 +93,7 @@ export default class DimAirFzz extends Component {
                   {this.state.aircrfttypBox.map((item, index) => {
                       let styleSpan = "style='color: #3c78ff'";
                       let airText = item.replace(this.state.aircrfttypTypeSearchText, "<span " + styleSpan + ">" + this.state.aircrfttypTypeSearchText + "</span>")
-                      return <div key={index} onClick={this.aircrfttypEvent.bind(this,item)} dangerouslySetInnerHTML={{ __html: airText }}></div>
+                      return <div key={index} onClick={this.aircrfttypEvent.bind(this,item)} title={item} dangerouslySetInnerHTML={{ __html: airText }}></div>
                   })}
               </div>
           </Fragment>

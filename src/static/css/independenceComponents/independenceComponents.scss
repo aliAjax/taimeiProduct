@@ -119,3 +119,18 @@
 .iskgCkecked {
   left: 16px;
 }
+
+.line-annotation{
+  display: flex;
+  >div{
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    margin-right: 10px;
+    >div{
+      width: 32px;
+      height: 6px;
+      margin-left: 5px;
+    }
+  }
+}

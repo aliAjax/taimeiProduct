@@ -171,11 +171,17 @@ export default class Airport extends Component {
                                 if (item.adjunctName != null) {
                                     adjunctText = <span style={{ color: "#5086ff", textDecoration: "underline" }} onClick={this.downLoad.bind(this, item.id)}>{item.adjunctName}</span>
                                 };
-                                if (item.allPayment == 0) {
-                                    allPaymentText = "已结清"
-                                } else if (item.allPayment == 1) {
-                                    allPaymentText = <span style={{ color: "red" }}>未结清</span>
-                                };
+                                if (item.ordersState == 0) {
+                                    allPaymentText = <span style={{ color: "red" }}>待审核</span>
+                                } else {
+                                    if (item.allPayment == 0) {
+                                        allPaymentText = "已结清"
+                                    } else if (item.allPayment == 1) {
+                                        allPaymentText = <span style={{ color: "red" }}>未结清</span>
+                                    } else {
+                                        allPaymentText = "暂无数据"
+                                    };
+                                }
                                 return <tr key={index}>
                                     <td className={style['td']}>{item.ordersMonth}</td>
                                     <td className={style['should']}>{accountsDueText}</td>

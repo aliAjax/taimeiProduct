@@ -1,5 +1,5 @@
 import {airMes} from "./airMes";
-import {i3, i5, i8,i9} from "../page/bmap/bmapResources";
+import {i3, i5, i10,i8} from "../page/bmap/bmapResources";
 import {store} from "../store";
 const rc = {
     a: {
@@ -155,7 +155,7 @@ function routesData(data) {
                     b.push({
                         name: v.airlnCd,
                         value: [v.cityCoordinateJ, v.cityCoordinateW],
-                        symbol:isDpt ? i9 : i5,
+                        symbol:isDpt ? i10 : i5,
                         symbolOffset: isDpt ? [20, -20] : [0, -25],
                         symbolSize:isDpt ? [44,21] : [40,40],
                         mes,
@@ -165,7 +165,7 @@ function routesData(data) {
                             title:"市场运力（架）",
                             international:"",
                             isBc:isDpt,
-                            num:isDpt ? `本场 ${v.num}` : `${v.num}`,
+                            num:isDpt ? `${v.num}` : `${v.num}`,
                             airlnCd:mes.airlnCd
                         }
                     });
@@ -191,7 +191,7 @@ function routesData(data) {
                     });
                     d.push({
                         name: v.airlnCd,
-                        symbol:isDpt ? i9 : i3,
+                        symbol:isDpt ? i10 : i3,
                         symbolOffset: isDpt ? [20, -20] : [0, -25],
                         symbolSize:isDpt ? [44,21] : [40,40],
                         value: [v.cityCoordinateJ, v.cityCoordinateW],
@@ -200,7 +200,7 @@ function routesData(data) {
                         type:1,  //  需求类型  0，市场、1，我的需求
                         label:{
                             isBc:isDpt,
-                            num:isDpt ? `本场 ${v.myNum}` : `${v.myNum}`
+                            num:isDpt ? `${v.myNum}` : `${v.myNum}`
                         }
                     });
                     if(isDpt){
@@ -216,7 +216,7 @@ function routesData(data) {
             d.push({
                 name: store.getState().role.airlineretrievalcondition,
                 value: [havaMes.cityCoordinateJ, havaMes.cityCoordinateW],
-                symbol:i9,
+                symbol:i10,
                 symbolOffset:[20, -20],
                 symbolSize:[44,21],
                 mes:havaMes,
@@ -225,7 +225,7 @@ function routesData(data) {
                 label:{
                     international:"",
                     isBc:true,
-                    num:`本场`,
+                    num:``,
                 }
             });
         }
@@ -236,7 +236,7 @@ function routesData(data) {
             b.push({
                 name: store.getState().role.airlineretrievalcondition,
                 value: [havaMes.cityCoordinateJ, havaMes.cityCoordinateW],
-                symbol:i9,
+                symbol:i10,
                 symbolOffset:[20, -20],
                 symbolSize:[44,21],
                 mes:havaMes,
@@ -245,7 +245,7 @@ function routesData(data) {
                 label:{
                     international:"",
                     isBc:true,
-                    num:`本场`,
+                    num:``,
                 }
             });
         }

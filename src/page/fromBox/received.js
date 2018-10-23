@@ -49,7 +49,7 @@ export default class received extends Component {
                 planList: this.props.planList,
                 demandId: this.props.demandId,
                 updateDetail: this.props.updateDetail,
-                defaultActiveKey: this.props.nextprops,
+                defaultActiveKey: this.props.defaultActiveKey,
                 visible_reCall: false,
                 visible_affirm: false,
                 visible_rejectAndReCall: false,
@@ -533,6 +533,10 @@ export default class received extends Component {
     // 创建方案折叠面板节点
     createPanelEle() {
 
+        try {
+            
+        
+
         let { isMarket, role, demandprogress, planList, demandId } = this.props;
 
         if (!(planList && planList.length)) {
@@ -547,7 +551,7 @@ export default class received extends Component {
             }
             // str = '暂无方案'
             //暂未收到方案
-            return <div style={{ 'height': '80px', 'text-align': 'center', 'line-height': '80px' }}>{str}</div>;
+            return <div style={{ height: '80px', textAlign: 'center', lineHeight: '80px' }}>{str}</div>;
         }
         let c = this.init().style;
 
@@ -577,13 +581,14 @@ export default class received extends Component {
 
             // item中需要显示的数据
             let payload = (isCurrentUserResponsePlan === '1' || !isMarket) ? {
-                icon: '&#xe602;', msg: Number(unReadMessageCount), site: 'after', fromNameId: store.getState().role.id, responsePlanId: id,
+                msgicon: '&#xe602;', msgNum: Number(unReadMessageCount), fromNameId: store.getState().role.id, toNameId: '', responsePlanId: id,
             } : {};
 
             if (isCurrentUserResponsePlan === '1' || isMarket) payload.toNameId = employeeId;
 
             if (!isMarket) payload.toNameId = responseEmployeeId;
 
+            // 图标排序颜色
             let icon = '', color = '';
             switch (index) {
                 case 0: icon = '&#xe66a;'; color = '#e43838'; break;
@@ -596,10 +601,10 @@ export default class received extends Component {
             let filter = {
                 style: c,
                 params: [
-                    { name: 'NO.' + (index + 1), icon: icon, site: 'before', color: color },
+                    { name: 'NO.' + (index + 1), icon: icon, color: color },
                     { name: releaseTime },
-                    { name: airline, ...payload },
-                    { name: price }
+                    { name: airline },
+                    { name: price, msg: { ...payload } }
                 ]
             }
 
@@ -618,7 +623,7 @@ export default class received extends Component {
                     { name: '时刻要求', value: this.timeRequireStr(value.timeRequirements) },
                     { name: '其他说明', value: value.remark || '无' },
                 ]
-                plans = < RsAirline rs={scheme} calculate={true} updateDetail={this.props.updateDetail} />
+                plans = <RsAirline rs={scheme} calculate={true} updateDetail={this.props.updateDetail} />
 
             } else if (role === '1' && !isMarket) {
                 if (responseProgress === "0") {
@@ -717,6 +722,9 @@ export default class received extends Component {
                 </Panel>
             );
         })
+        } catch (error) {
+            console.log(error)
+        }
 
     }
     // 创建子项节点
@@ -728,40 +736,28 @@ export default class received extends Component {
             }
             return { __html: msg }
         }
-        let btn = (
-            <div className={style['sort-item']}>
-                <button>
-                    <i className={'iconfont'}>&#xe605;</i>
-                </button>
-                <button>
-                    <i className={'iconfont'}>&#xe605;</i>
-                </button>
-            </div>
-        )
         return (
             <div className={`${style['rs-item']} ${style['common-item']} ${classname}`}>
                 {
                     filter.params.map((value, index) => {
-                        let { name, sort, icon, msg, site, color, fromNameId, toNameId, responsePlanId } = value;
-
-                        // TODO: 不显示未读消息数
-                        msg = false;
+                        let { name, icon, color, msg = {} } = value;
+                        let { msgicon, msgNum, fromNameId, toNameId, responsePlanId } = msg;
 
                         let span = <span>{name ? name : ''}</span>;
                         // 根据参数 创建图标 msg:是否有通知,icon:图标代码 site:图标位置
-                        let iEle = color != '' ? (
-                            <span className={msg ? style['active'] : ''} style={{ zIndex: 50 }}
-                                onClick={this.chatPanel.bind(this, fromNameId, toNameId, responsePlanId)}>
+                        let iEle = color ? (
+                            <span style={{ zIndex: 50 }}>
+
                                 <i className={'iconfont'} dangerouslySetInnerHTML={createMarkup(icon)} style={{ color: color }}></i>
                             </span>
                         ) : '';
+                        let iMsgEle = msgicon ? (
+                            <span style={{ zIndex: 50, position: 'absolute', right: 0 }} className={msgNum ? style['active'] : ''} onClick={this.chatPanel.bind(this, fromNameId, toNameId, responsePlanId)}>
+                                <i className={'iconfont'} dangerouslySetInnerHTML={createMarkup(msgicon)}></i>
+                            </span>
+                        ) : '';
                         return (
-                            <div key={index}>
-                                {icon && site == 'before' ? iEle : ''}
-                                {span}
-                                {sort ? btn : ''}
-                                {icon && site == 'after' ? iEle : ''}
-                            </div>
+                            <div key={index}> {iEle} {span} {iMsgEle} </div>
                         )
                     })
                 }
@@ -1122,7 +1118,7 @@ export default class received extends Component {
                     uploading={this.state.uploading} />
 
                 {this.state.showDealPwd ? <div style={{
-                    height: '100%', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'fixed', top: 0, left: 0, background: 'rgba(0, 0, 0, 0.2)'
+                    height: '100%', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'fixed', top: 0, left: 0, background: 'rgba(0, 0, 0, 0.2)', zIndex: 300
                 }}>
                     <DealPwd close={this.dealCloseFn} forgetPwd={this.forgetPwd} />
                 </div> : ''}

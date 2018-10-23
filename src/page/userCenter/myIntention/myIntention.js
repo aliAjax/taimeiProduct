@@ -12,6 +12,7 @@ import emitter from "../../../utils/events";
 export default class MyIntention extends Component {
     constructor(props) {
         super(props);
+        this.showDetails=this.showDetails.bind(this);
         this.state = {
             spinShow: true,//加载中
             currentNum: 1,//当前页数
@@ -57,7 +58,6 @@ export default class MyIntention extends Component {
             method: 'post',
             url: '/getResponseListOfMine',
             params: {
-                demandType: "",
                 responseProgress: this.state.responseProgress,
                 page: 1,//页码 必须传 默认1
                 pageNo: this.state.pageNo,
@@ -68,8 +68,21 @@ export default class MyIntention extends Component {
             }
         }).then((response) => {
             if (response.data.opResult == 0) {
+                let initData = response.data.list.list;
+                let totalCount = parseInt(response.data.list.totalCount);
+                let numPrePage = response.data.list.numPrePage;
+                let showChatBoxList = [];
+                for (let i = 0; i < initData.length; i++) {
+                    showChatBoxList.push({
+                        responseId: initData[i].id,
+                        type: false
+                    })
+                };
                 this.setState(() => ({
-                    initData: response.data.list.list,
+                    totalCount,
+                    numPrePage,
+                    showChatBoxList,
+                    initData,
                     orderType,
                     page: 1
                 }));
@@ -152,11 +165,11 @@ export default class MyIntention extends Component {
     choosePage(pageNumber) {
         let page = pageNumber;
         let orderType = this.state.orderType;
+        console.log(page)
         Axios({
             method: 'post',
             url: '/getResponseListOfMine',
             params: {
-                demandType: this.state.demandType,
                 responseProgress: this.state.responseProgress,
                 page,//页码 必须传 默认1
                 pageNo: this.state.pageNo,
@@ -237,7 +250,6 @@ export default class MyIntention extends Component {
             method: 'post',
             url: '/getResponseListOfMine',
             params: {
-                demandType: "",
                 responseProgress: num,
                 page: 1,//页码 必须传 默认1
                 pageNo: this.state.pageNo,
@@ -303,7 +315,6 @@ export default class MyIntention extends Component {
             method: 'post',
             url: '/getResponseListOfMine',
             params: {
-                demandType: "",
                 responseProgress: "",
                 page,//页码 必须传 默认1
                 orderType,//发布时间排序类型 0-倒序 1-正序
@@ -446,7 +457,9 @@ export default class MyIntention extends Component {
                                     icon = "";
                                     break;
                             }
-                            return <MyIntentionItem data={item} showData={this.state.showChatData} chatBoxType={this.state.showChatBoxList[index].type} key={index} text={text} icon={icon} showDetailsType={this.state.showDetailsType} chatEvent={(id) => this.chatEvent(id)} showDetailsEvent={(id, type) => this.showDetails(id, type)} />
+                            return <MyIntentionItem data={item} showData={this.state.showChatData} chatBoxType={this.state.showChatBoxList[index].type} key={index} text={text} icon={icon} showDetailsType={this.state.showDetailsType} chatEvent={(id) => this.chatEvent(id)}
+                                                    showDetailsEvent={(id,type) => this.showDetails(id,type)}
+                                    />
                         })
                     }
                 </div>

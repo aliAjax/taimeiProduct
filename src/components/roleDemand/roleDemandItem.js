@@ -1,7 +1,7 @@
 
 import React, { Component } from 'react';
 import { store } from './../../store/index';
-import Axios from "./../../utils/axiosInterceptors";
+// import Axios from "./../../utils/axiosInterceptors";
 import emitter from '../../utils/events';
 import classNames from 'classnames';
 import style from './../../static/css/demandList/roleDemandItem.scss';

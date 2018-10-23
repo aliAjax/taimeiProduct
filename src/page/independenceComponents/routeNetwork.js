@@ -149,6 +149,19 @@ export default class RouteNetwork extends Component{
                         <span className={`${this.state.ched1 ? style['iskgCkecked'] : ""} ${style['turn-off']}`}>&#xe61e;</span>
                     </div>
                 </div>
+                {
+                    store.getState().role.role === '0' ? "" :
+                        <div className={style["line-annotation"]}>
+                            <div>
+                                <span>直飞</span>
+                                <div style={{backgroundColor:"#4177fd"}}></div>
+                            </div>
+                            <div>
+                                <span>经停</span>
+                                <div style={{backgroundColor:"#62b083"}}></div>
+                            </div>
+                        </div>
+                }
                 {hd}
                 <section className={`${style['model-magic']} ${this.state.max_model_magic ? style['max-model-magic'] : ''}`}
                      onMouseEnter={this.showModeIcon.bind(this,true)}
@@ -165,3 +178,4 @@ export default class RouteNetwork extends Component{
         )
     }
 }
+

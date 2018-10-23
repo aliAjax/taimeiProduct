@@ -3,6 +3,7 @@ import React,{Component,Fragment} from "react";
 import { Button,message} from "antd";
 import style from "../../static/css/contract/contract.scss";
 import Axios from "../../utils/axiosInterceptors";
+import emitter from "../../utils/events";
 
 export default class Contract extends Component{
 
@@ -106,6 +107,9 @@ export default class Contract extends Component{
 
     //关闭
     closeDetail(){
+        if(window.screen.width<=1366){
+			emitter.emit('changeBoxLocation');
+        };
         this.props.closeDetail();
     }
 
@@ -352,7 +356,7 @@ export default class Contract extends Component{
         return(
             <div className={style['contractBox']} style={contractStyle}>
                 <form id="downLoad" ref={(ref) => this.downLoadText = ref} action={address} method="get" style={{ display: "none" }}>
-                    <input type="text" name="id" value={this.state.showId} />
+                    <input type="text" name="id" value={this.state.showId}  readOnly="readonly"/>
                 </form>
                 <div className={style['detailBox']}>
                     <div className={`${style['detailNav']} ${style['noPrint']}`}>

@@ -31,6 +31,21 @@
     top: 65px;
     opacity: 1;
 }
+@media screen and (max-width: 1366px) {
+    .formDetails-enter-done{
+        top:50px;
+    }
+
+    .formDetails-enter-active {
+        top: 50px;
+        opacity: 1;
+        transition: opacity 500ms ease-in,top 500ms ease-out;
+    }
+    .formDetails-exit {
+        top: 50px;
+        opacity: 1;
+    }
+}
 .formDetails-exit-active {
     opacity: 0.01;
     top: -100%;

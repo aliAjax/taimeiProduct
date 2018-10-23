@@ -38,12 +38,13 @@ export default class DemandSearch extends Component {
     // TODO: 输入框改变事件
     searchTextChangeFn(e) {
         let target = e.target;
+        let hisyData = JSON.parse(localStorage.getItem('hisyData'));
         this.setState({
             searchText: target.value,
             data:"",
             coverDivShow: false,
         });
-        if (target.value == '') {
+        if (target.value == '' && hisyData != null && hisyData.length != 0) {
             this.setState({
                 showHisy: true,
                 searchText: '',
@@ -51,10 +52,17 @@ export default class DemandSearch extends Component {
                 showAirportSearchHis: false,
             })
         }else {
-            this.setState({
-                showHisy: false,
-                showAirportSearchHis: true,
-            })
+            if(target.value == '') {
+                this.setState({
+                    showHisy: false,
+                    showAirportSearchHis: false,
+                })
+            }else {
+                this.setState({
+                    showHisy: false,
+                    showAirportSearchHis: true,
+                })
+            }
         }
     }
     // TODO: 输入框焦点事件
@@ -177,6 +185,7 @@ export default class DemandSearch extends Component {
             position: 'absolute',
             top: '32px',
             left: '20px',
+            width: '264px',
             maxHeight: '220px',
             overflowY: 'scroll',
             background: 'white',
